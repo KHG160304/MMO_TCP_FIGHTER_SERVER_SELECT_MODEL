@@ -9,6 +9,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+MMO_TCP_FIGHTER_LOG*.txt
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
