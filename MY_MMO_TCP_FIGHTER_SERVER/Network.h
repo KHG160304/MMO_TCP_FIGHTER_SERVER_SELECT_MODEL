@@ -16,8 +16,8 @@ struct Session
 	Session(SOCKET socket, const SOCKADDR_IN* addrIn)
 		: socket(socket)
 		, addrIn(*addrIn)
-		, recvQueue(3900)
-		, sendQueue(3900)
+		, recvQueue(1048576)
+		, sendQueue(1048576)
 		, lastRecvTime(timeGetTime())
 	{}
 };

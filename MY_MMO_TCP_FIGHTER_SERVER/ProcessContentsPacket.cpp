@@ -240,8 +240,9 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{	
-		_Log(dfLOG_LEVEL_DEBUG, "教农 惯积: CHARACTER_ID[%d] [cx:%d/cy:%d] ==> [sx:%d/sy:%d]"
-			, ptrCharacter->characterID, clientXpos, clientYpos, ptrCharacter->xPos, ptrCharacter->yPos);
+		_Log(dfLOG_LEVEL_SYSTEM, "教农 惯积: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+			, ptrCharacter->characterID, dirTable[move8Dir], clientXpos, clientYpos
+			, dirTable[ptrCharacter->move8Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
 		clientYpos = ptrCharacter->yPos;
 
@@ -299,8 +300,9 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_DEBUG, "教农 惯积: CHARACTER_ID[%d] [cx:%d/cy:%d] ==> [sx:%d/sy:%d]"
-			, ptrCharacter->characterID, clientXpos, clientYpos, ptrCharacter->xPos, ptrCharacter->yPos);
+		_Log(dfLOG_LEVEL_SYSTEM, "教农 惯积: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
+			, dirTable[ptrCharacter->move8Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
 		clientYpos = ptrCharacter->yPos;
 
@@ -334,8 +336,9 @@ bool ProcessPacketAttack1(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_DEBUG, "教农 惯积: CHARACTER_ID[%d] [cx:%d/cy:%d] ==> [sx:%d/sy:%d]"
-			, ptrCharacter->characterID, clientXpos, clientYpos, ptrCharacter->xPos, ptrCharacter->yPos);
+		_Log(dfLOG_LEVEL_SYSTEM, "教农 惯积: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
+			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
 		clientYpos = ptrCharacter->yPos;
 
@@ -368,8 +371,9 @@ bool ProcessPacketAttack2(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_DEBUG, "教农 惯积: CHARACTER_ID[%d] [cx:%d/cy:%d] ==> [sx:%d/sy:%d]"
-			, ptrCharacter->characterID, clientXpos, clientYpos, ptrCharacter->xPos, ptrCharacter->yPos);
+		_Log(dfLOG_LEVEL_SYSTEM, "教农 惯积: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
+			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
 		clientYpos = ptrCharacter->yPos;
 
@@ -402,8 +406,9 @@ bool ProcessPacketAttack3(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_DEBUG, "教农 惯积: CHARACTER_ID[%d] [cx:%d/cy:%d] ==> [sx:%d/sy:%d]"
-			, ptrCharacter->characterID, clientXpos, clientYpos, ptrCharacter->xPos, ptrCharacter->yPos);
+		_Log(dfLOG_LEVEL_SYSTEM, "教农 惯积: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
+			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
 		clientYpos = ptrCharacter->yPos;
 
@@ -435,6 +440,8 @@ void Update()
 		return;
 	}
 	startTime = endTime - (intervalTime - INTERVAL_FPS(25));
+	/*_Log(dfLOG_LEVEL_SYSTEM, "埃拜 瞒捞: %d"
+		, intervalTime - INTERVAL_FPS(25));*/
 	CountFrame();
 
 	CharacterInfo* ptrCharac;

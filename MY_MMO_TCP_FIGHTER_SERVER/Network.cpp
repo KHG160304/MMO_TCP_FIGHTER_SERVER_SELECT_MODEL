@@ -263,6 +263,7 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 
 		//DispatchPacketToContents(socket, tmpRecvPacketHeader, &tmpRecvPacketBody);
 		DispatchPacketToContents(socket, (char*)&tmpRecvPacketHeader, &tmpRecvPacketBody);
+		tmpRecvPacketBody.ClearBuffer();
 	}
 
 	//delete[] tmpRecvPacketHeader;
