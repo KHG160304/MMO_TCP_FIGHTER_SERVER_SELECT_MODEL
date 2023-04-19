@@ -115,10 +115,21 @@ bool DispatchPacketToContents(UINT_PTR sessionKey, char* tmpRecvPacketHeader, Se
 		return ProcessPacketAttack2(sessionKey, tmpRecvPacketBody);
 	case dfPACKET_CS_ATTACK3:
 		return ProcessPacketAttack3(sessionKey, tmpRecvPacketBody);
-	case dfPACKET_CS_SYNC:
-		return false;
+	case dfPACKET_CS_ECHO:
+		return ProcessPacketEcho(sessionKey, tmpRecvPacketBody);
 	}
 	return false;
+}
+
+void MakePacketEcho(SerializationBuffer* packetBuf, DWORD time)
+{
+	CommonPacketHeader packetHeader;
+	packetHeader.byCode = dfPACKET_CODE;
+	packetHeader.bySize = sizeof(time);
+	packetHeader.byType = dfPACKET_SC_ECHO;
+
+	packetBuf->Enqueue((char*)&packetHeader, sizeof(packetHeader));
+	*packetBuf << time;
 }
 
 void MakePacketSyncXYPos(SerializationBuffer* packetBuf, DWORD id, WORD xPos, WORD yPos)
@@ -426,6 +437,17 @@ bool ProcessPacketAttack3(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 
 	MakePacketAttack3(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
+	return true;
+}
+
+bool ProcessPacketEcho(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacketBody)
+{
+	SerializationBuffer packetBuf;
+	DWORD time;
+
+	*tmpRecvPacketBody >> time;
+	MakePacketEcho(&packetBuf, time);
+	SendUnicast(sessionKey, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	return true;
 }
 

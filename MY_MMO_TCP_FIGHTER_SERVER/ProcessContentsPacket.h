@@ -40,6 +40,8 @@ size_t GetCharacterCnt(void);
 
 CharacterInfo* FindCharacter(SOCKET socket);
 
+void MakePacketEcho(SerializationBuffer* packetBuf, DWORD time);
+
 void MakePacketSyncXYPos(SerializationBuffer* packetBuf, DWORD id, WORD xPos, WORD yPos);
 
 void MakePacketCreateMyCharater(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp);
@@ -67,6 +69,8 @@ bool ProcessPacketAttack1(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 bool ProcessPacketAttack2(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacketBody);
 
 bool ProcessPacketAttack3(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacketBody);
+
+bool ProcessPacketEcho(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacketBody);
 
 void Update();
 #endif // !PROCESS_CONTENTS_PACKET
