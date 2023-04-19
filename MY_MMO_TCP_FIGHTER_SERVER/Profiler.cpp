@@ -3,6 +3,8 @@
 #include <time.h>
 #include "Profiler.h"
 
+#define INVALID_CALL_COUNT	2
+
 static int sampleCnt = 0;
 static ProfileSample gProfileSample[64] = { 0 };
 static LARGE_INTEGER start;
@@ -63,8 +65,23 @@ void EndProfile(const WCHAR* tag)
 			}
 			else if (gProfileSample[i].iCallCount == 1)
 			{
-				gProfileSample[i].iMaxTime[1] = intervalTime;
-				gProfileSample[i].iMinTime[0] = intervalTime;
+				if (gProfileSample[i].iMaxTime[0] > intervalTime)
+				{
+					gProfileSample[i].iMaxTime[1] = intervalTime;
+					gProfileSample[i].iMinTime[1] = gProfileSample[i].iMinTime[0];
+					gProfileSample[i].iMinTime[0] = intervalTime;
+				}
+				else if (gProfileSample[i].iMaxTime[0] < intervalTime)
+				{
+					gProfileSample[i].iMaxTime[1] = gProfileSample[i].iMaxTime[0];
+					gProfileSample[i].iMaxTime[0] = intervalTime;
+					gProfileSample[i].iMinTime[0] = intervalTime;
+				}
+				else
+				{
+					gProfileSample[i].iMaxTime[1] = intervalTime;
+					gProfileSample[i].iMinTime[0] = intervalTime;
+				}
 			}
 			else
 			{
@@ -137,18 +154,18 @@ bool SaveProfileSampleToText(const WCHAR* szFileName)
 		QueryPerformanceFrequency(&lpFrequency);
 	}
 
-	fprintf_s(file, "%-35s |%15s |%15s |%15s |%13s |\n", "Name", "Average", "Min", "Max", "Call");
+	fprintf_s(file, "%-50s |%15s |%15s |%15s |%13s |\n", "Name", "Average", "Min", "Max", "Call");
 	fprintf_s(file, "-------------------------------------------------------------------------------------------------------\n");
 
 	for (int i = 0; i < sampleCnt; ++i)
 	{
-		fprintf_s(file, "%-35ws |%13.4Lfレs |%13.4Lfレs |%13.4Lfレs |%13lld |\n"
+		fprintf_s(file, "%-50ws |%13.4Lfレs |%13.4Lfレs |%13.4Lfレs |%13lld |\n"
 			, gProfileSample[i].szName
 			, ((long double)((gProfileSample[i].iTotalTime - gProfileSample[i].iMaxTime[0] - gProfileSample[i].iMaxTime[1] - gProfileSample[i].iMinTime[0] - gProfileSample[i].iMinTime[1]) * 1000000)
-				/ (long double)lpFrequency.QuadPart) / (long double)gProfileSample[i].iCallCount
+				/ (long double)lpFrequency.QuadPart) / ((long double)gProfileSample[i].iCallCount - INVALID_CALL_COUNT)
 			, (long double)gProfileSample[i].iMinTime[0] * 1000000 / (long double)lpFrequency.QuadPart
 			, (long double)gProfileSample[i].iMaxTime[0] * 1000000 / (long double)lpFrequency.QuadPart
-			, gProfileSample[i].iCallCount);
+			, gProfileSample[i].iCallCount - INVALID_CALL_COUNT);
 	}
 	free(_szFileName);
 	fclose(file);
