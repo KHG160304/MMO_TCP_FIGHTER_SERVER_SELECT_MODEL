@@ -33,9 +33,9 @@ void ProcessAcceptEvent(void* param)
 		, characInfo->characterID, i);
 
 	ConvertPacketCreateMyCharaterToCreateOtherCharacter(&sendPacket);
-	// ÀÓ½Ã·Î ÀÏ´Ü
+	// ï¿½Ó½Ã·ï¿½ ï¿½Ï´ï¿½
 	SendBroadcast(sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), (SOCKET)param);
-	// Send Sector ³»ÁÖº¯ ¼½ÅÍ;
+	// Send Sector ï¿½ï¿½ï¿½Öºï¿½ ï¿½ï¿½ï¿½ï¿½;
 
 	CharacterInfo* otherCharac;
 	std::map<SOCKET, CharacterInfo*>::iterator iter = characterList.begin();
@@ -128,8 +128,8 @@ void MakePacketEcho(SerializationBuffer* packetBuf, DWORD time)
 	packetHeader.bySize = sizeof(time);
 	packetHeader.byType = dfPACKET_SC_ECHO;
 
-	packetBuf->Enqueue((char*)&packetHeader, sizeof(packetHeader));
-	*packetBuf << time;
+	packetBuf->Enqueue((char*)&packetHeader, sizeof(CommonPacketHeader));
+	(*packetBuf) << time;
 }
 
 void MakePacketSyncXYPos(SerializationBuffer* packetBuf, DWORD id, WORD xPos, WORD yPos)
@@ -251,8 +251,9 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{	
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ý: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
-			, ptrCharacter->characterID, dirTable[move8Dir], clientXpos, clientYpos
+		DWORD currentTick = timeGetTime();
+		_Log(dfLOG_LEVEL_SYSTEM, "ï¿½ï¿½Å© ï¿½ß»ï¿½: CHARACTER_ID[%d] [tickInterval: %d] [actionX: %d/actionY: %d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+			, ptrCharacter->characterID, currentTick - ptrCharacter->dwActionTick, ptrCharacter->actionXpos, ptrCharacter->actionYpos, dirTable[move8Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->move8Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
 		clientYpos = ptrCharacter->yPos;
@@ -292,6 +293,10 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 	PRO_BEGIN(L"SendBroadcast");
 	SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
 	PRO_END(L"SendBroadcast");
+
+	ptrCharacter->dwActionTick = timeGetTime();
+	ptrCharacter->actionXpos = clientXpos;
+	ptrCharacter->actionYpos = clientYpos;
 	return true;
 }
 
@@ -311,8 +316,9 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ý: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
-			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
+		DWORD currentTick = timeGetTime();
+		_Log(dfLOG_LEVEL_SYSTEM, "ï¿½ï¿½Å© ï¿½ß»ï¿½: CHARACTER_ID[%d] [tickInterval: %d] [actionX: %d/actionY: %d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+			, ptrCharacter->characterID, currentTick - ptrCharacter->dwActionTick, ptrCharacter->actionXpos, ptrCharacter->actionYpos, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->move8Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
 		clientYpos = ptrCharacter->yPos;
@@ -332,6 +338,11 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 
 	MakePacketMoveStop(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
+
+	ptrCharacter->dwActionTick = timeGetTime();
+	ptrCharacter->actionXpos = clientXpos;
+	ptrCharacter->actionYpos = clientYpos;
+
 	return true;
 }
 
@@ -347,7 +358,7 @@ bool ProcessPacketAttack1(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ý: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "ï¿½ï¿½Å© ï¿½ß»ï¿½: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -382,7 +393,7 @@ bool ProcessPacketAttack2(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ý: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "ï¿½ï¿½Å© ï¿½ß»ï¿½: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -417,7 +428,7 @@ bool ProcessPacketAttack3(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ý: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "ï¿½ï¿½Å© ï¿½ß»ï¿½: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -462,7 +473,7 @@ void Update()
 		return;
 	}
 	startTime = endTime - (intervalTime - INTERVAL_FPS(25));
-	/*_Log(dfLOG_LEVEL_SYSTEM, "°£°Ý Â÷ÀÌ: %d"
+	/*_Log(dfLOG_LEVEL_SYSTEM, "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: %d"
 		, intervalTime - INTERVAL_FPS(25));*/
 	CountFrame();
 
@@ -517,7 +528,7 @@ void Update()
 				, ptrCharac->characterID, dirTable[ptrCharac->action]
 				, ptrCharac->xPos, ptrCharac->yPos);*/
 
-			/*¼½ÅÍ ¾÷µ¥ÀÌÆ® ÄÚµå*/
+			/*ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Úµï¿½*/
 		}
 	}
 }

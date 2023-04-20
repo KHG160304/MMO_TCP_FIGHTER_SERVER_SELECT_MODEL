@@ -46,6 +46,7 @@ int main(void)
 
 	while (gIsServerRunning)
 	{
+		PRO_BEGIN(L"RTT");
 		PRO_BEGIN(L"ProcessNetworkIOEvent");
 		ProcessNetworkIOEvent();
 		PRO_END(L"ProcessNetworkIOEvent");
@@ -57,6 +58,7 @@ int main(void)
 		ServerControl();
 
 		Monitoring();
+		PRO_END(L"RTT");
 	}
 
 	ShutdownServer();

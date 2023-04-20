@@ -9,8 +9,11 @@ struct CharacterInfo
 {
 	SOCKET	socket;
 	DWORD	characterID;
+	DWORD	dwActionTick;
 	WORD	xPos;
 	WORD	yPos;
+	WORD	actionXpos;
+	WORD	actionYpos;
 	BYTE	stop2Dir;
 	BYTE	move8Dir;
 	BYTE	action;
