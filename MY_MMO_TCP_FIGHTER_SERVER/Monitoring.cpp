@@ -1,4 +1,4 @@
-#include "Monitoring.h"
+﻿#include "Monitoring.h"
 #include "Log.h"
 #include <windows.h>
 #pragma comment(lib, "winmm.lib")

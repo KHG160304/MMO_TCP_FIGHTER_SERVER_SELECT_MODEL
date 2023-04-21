@@ -1,4 +1,4 @@
-#include "Profiler.h"
+﻿#include "Profiler.h"
 #include "SerializationBuffer.h"
 #include <memory.h>
 

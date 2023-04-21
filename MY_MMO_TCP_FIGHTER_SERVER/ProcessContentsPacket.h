@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef __PROCESS_CONTENTS_PACKET_H__
 #define	__PROCESS_CONTENTS_PACKET_H__
 #include "SerializationBuffer.h"

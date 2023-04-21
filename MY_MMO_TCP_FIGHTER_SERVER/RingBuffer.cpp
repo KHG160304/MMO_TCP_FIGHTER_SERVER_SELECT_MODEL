@@ -1,4 +1,4 @@
-#include "Profiler.h"
+﻿#include "Profiler.h"
 #include "RingBuffer.h"
 #include <memory.h>
 

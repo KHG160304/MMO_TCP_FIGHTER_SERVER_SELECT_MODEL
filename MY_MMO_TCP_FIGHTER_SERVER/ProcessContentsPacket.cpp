@@ -1,4 +1,4 @@
-#include "Profiler.h"
+ï»¿#include "Profiler.h"
 #include "Network.h"
 #include "ProcessContentsPacket.h"
 #include "GameContentValueSetting.h"
@@ -33,9 +33,9 @@ void ProcessAcceptEvent(void* param)
 		, characInfo->characterID, i);
 
 	ConvertPacketCreateMyCharaterToCreateOtherCharacter(&sendPacket);
-	// ÀÓ½Ã·Î ÀÏ´Ü
+	// ì„ì‹œë¡œ ì¼ë‹¨
 	SendBroadcast(sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), (SOCKET)param);
-	// Send Sector ³»ÁÖº¯ ¼½ÅÍ;
+	// Send Sector ë‚´ì£¼ë³€ ì„¹í„°;
 
 	CharacterInfo* otherCharac;
 	std::map<SOCKET, CharacterInfo*>::iterator iter = characterList.begin();
@@ -240,7 +240,7 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{	
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ı: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "ì‹±í¬ ë°œìƒ: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[move8Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->move8Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -300,7 +300,7 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ı: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "ì‹±í¬ ë°œìƒ: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->move8Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -336,7 +336,7 @@ bool ProcessPacketAttack1(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ı: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "ì‹±í¬ ë°œìƒ: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -371,7 +371,7 @@ bool ProcessPacketAttack2(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ı: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "ì‹±í¬ ë°œìƒ: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -406,7 +406,7 @@ bool ProcessPacketAttack3(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "½ÌÅ© ¹ß»ı: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "ì‹±í¬ ë°œìƒ: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -440,7 +440,7 @@ void Update()
 		return;
 	}
 	startTime = endTime - (intervalTime - INTERVAL_FPS(25));
-	/*_Log(dfLOG_LEVEL_SYSTEM, "°£°İ Â÷ÀÌ: %d"
+	/*_Log(dfLOG_LEVEL_SYSTEM, "ê°„ê²© ì°¨ì´: %d"
 		, intervalTime - INTERVAL_FPS(25));*/
 	CountFrame();
 
@@ -495,7 +495,7 @@ void Update()
 				, ptrCharac->characterID, dirTable[ptrCharac->action]
 				, ptrCharac->xPos, ptrCharac->yPos);*/
 
-			/*¼½ÅÍ ¾÷µ¥ÀÌÆ® ÄÚµå*/
+			/*ì„¹í„° ì—…ë°ì´íŠ¸ ì½”ë“œ*/
 		}
 	}
 }
