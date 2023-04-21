@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef __MONITORING_H__
 #define	__MONITORING_H__
 

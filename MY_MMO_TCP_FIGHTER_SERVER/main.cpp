@@ -1,4 +1,4 @@
-#include <stdio.h>
+ï»¿#include <stdio.h>
 #include <conio.h>
 #include "Log.h"
 #include "Network.h"
@@ -19,7 +19,7 @@ void ServerControl()
 		key = _getch();
 		if (key == 'q' || key == 'Q')
 		{
-			_Log(dfLOG_LEVEL_SYSTEM, "¼­¹ö Á¾·á");
+			_Log(dfLOG_LEVEL_SYSTEM, "ì„œë²„ ì¢…ë£Œ");
 			gIsServerRunning = false;
 		}
 

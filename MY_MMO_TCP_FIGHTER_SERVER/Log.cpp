@@ -1,4 +1,4 @@
-#include "Log.h"
+﻿#include "Log.h"
 
 int		gLogLevel = dfLOG_LEVEL_SYSTEM;
 wchar_t	gLogBuffer[2048 + 1];
