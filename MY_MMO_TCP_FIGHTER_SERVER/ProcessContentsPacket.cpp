@@ -54,9 +54,8 @@ void ProcessAcceptEvent(void* param)
 void ProcessDisconnectSessionEvent(void* param)
 {
 	SerializationBuffer sendPacket;
-	CharacterInfo* charac = FindCharacter((SOCKET)param);
 	//_Log(dfLOG_LEVEL_SYSTEM, "Disconnect character ID: %d, X: %d, Y: %d", charac->characterID, charac->)
-	MakePacketDeleteCharacter(&sendPacket, charac->characterID);
+	MakePacketDeleteCharacter(&sendPacket, FindCharacter((SOCKET)param)->characterID);
 	SendBroadcast(sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), (SOCKET)param);
 	characterList.erase((SOCKET)param);
 }
