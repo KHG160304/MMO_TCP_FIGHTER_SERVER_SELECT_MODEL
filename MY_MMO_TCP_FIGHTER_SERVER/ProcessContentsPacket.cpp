@@ -1,4 +1,4 @@
-#include "Profiler.h"
+﻿#include "Profiler.h"
 #include "Network.h"
 #include "ProcessContentsPacket.h"
 #include "GameContentValueSetting.h"
@@ -33,9 +33,9 @@ void ProcessAcceptEvent(void* param)
 		, characInfo->characterID, i);
 
 	ConvertPacketCreateMyCharaterToCreateOtherCharacter(&sendPacket);
-	// �ӽ÷� �ϴ�
+	// 임시로 일단
 	SendBroadcast(sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), (SOCKET)param);
-	// Send Sector ���ֺ� ����;
+	// Send Sector 내주변 섹터;
 
 	CharacterInfo* otherCharac;
 	std::map<SOCKET, CharacterInfo*>::iterator iter = characterList.begin();
@@ -54,7 +54,9 @@ void ProcessAcceptEvent(void* param)
 void ProcessDisconnectSessionEvent(void* param)
 {
 	SerializationBuffer sendPacket;
-	MakePacketDeleteCharacter(&sendPacket, FindCharacter((SOCKET)param)->characterID);
+	CharacterInfo* charac = FindCharacter((SOCKET)param);
+	//_Log(dfLOG_LEVEL_SYSTEM, "Disconnect character ID: %d, X: %d, Y: %d", charac->characterID, charac->)
+	MakePacketDeleteCharacter(&sendPacket, charac->characterID);
 	SendBroadcast(sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), (SOCKET)param);
 	characterList.erase((SOCKET)param);
 }
@@ -252,7 +254,7 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{	
 		DWORD currentTick = timeGetTime();
-		_Log(dfLOG_LEVEL_SYSTEM, "��ũ �߻�: CHARACTER_ID[%d] [tickInterval: %d] [actionX: %d/actionY: %d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "SYNC: CHARACTER_ID[%d] [tickInterval: %d] [actionX: %d/actionY: %d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, currentTick - ptrCharacter->dwActionTick, ptrCharacter->actionXpos, ptrCharacter->actionYpos, dirTable[move8Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->move8Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -317,7 +319,7 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
 		DWORD currentTick = timeGetTime();
-		_Log(dfLOG_LEVEL_SYSTEM, "��ũ �߻�: CHARACTER_ID[%d] [tickInterval: %d] [actionX: %d/actionY: %d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "SYNC: CHARACTER_ID[%d] [tickInterval: %d] [actionX: %d/actionY: %d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, currentTick - ptrCharacter->dwActionTick, ptrCharacter->actionXpos, ptrCharacter->actionYpos, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->move8Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -358,7 +360,7 @@ bool ProcessPacketAttack1(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "��ũ �߻�: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "SYNC: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -393,7 +395,7 @@ bool ProcessPacketAttack2(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "��ũ �߻�: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "SYNC: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -428,7 +430,7 @@ bool ProcessPacketAttack3(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 	if (abs(ptrCharacter->xPos - clientXpos) > dfERROR_RANGE
 		|| abs(ptrCharacter->yPos - clientYpos) > dfERROR_RANGE)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "��ũ �߻�: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
+		_Log(dfLOG_LEVEL_SYSTEM, "SYNC: CHARACTER_ID[%d] [dir: %s/cx: %d/cy: %d] ==> [dir: %s/sx: %d/sy: %d]"
 			, ptrCharacter->characterID, dirTable[stop2Dir], clientXpos, clientYpos
 			, dirTable[ptrCharacter->stop2Dir], ptrCharacter->xPos, ptrCharacter->yPos);
 		clientXpos = ptrCharacter->xPos;
@@ -492,35 +494,50 @@ void Update()
 		}
 		else if (ptrCharac->action != INVALID_ACTION)
 		{
+			int xPos = ptrCharac->xPos;
+			int yPos = ptrCharac->yPos;
+
 			switch (ptrCharac->action)
 			{
 			case dfPACKET_MOVE_DIR_LL:
-				ptrCharac->xPos = max(ptrCharac->xPos - dfSPEED_PLAYER_X, dfRANGE_MOVE_LEFT);
+				ptrCharac->xPos = max(xPos - dfSPEED_PLAYER_X, dfRANGE_MOVE_LEFT);
 				break;
 			case dfPACKET_MOVE_DIR_LU:
-				ptrCharac->xPos = max(ptrCharac->xPos - dfSPEED_PLAYER_X, dfRANGE_MOVE_LEFT);
-				ptrCharac->yPos = max(ptrCharac->yPos - dfSPEED_PLAYER_Y, dfRANGE_MOVE_TOP);
+				if (xPos > dfRANGE_MOVE_LEFT && yPos > dfRANGE_MOVE_TOP)
+				{
+					ptrCharac->xPos = max(xPos - dfSPEED_PLAYER_X, dfRANGE_MOVE_LEFT);
+					ptrCharac->yPos = max(yPos - dfSPEED_PLAYER_Y, dfRANGE_MOVE_TOP);
+				}
 				break;
 			case dfPACKET_MOVE_DIR_LD:
-				ptrCharac->xPos = max(ptrCharac->xPos - dfSPEED_PLAYER_X, dfRANGE_MOVE_LEFT);
-				ptrCharac->yPos = min(ptrCharac->yPos + dfSPEED_PLAYER_Y, dfRANGE_MOVE_BOTTOM);
+				if (xPos > dfRANGE_MOVE_LEFT && yPos < dfRANGE_MOVE_BOTTOM)
+				{
+					ptrCharac->xPos = max(xPos - dfSPEED_PLAYER_X, dfRANGE_MOVE_LEFT);
+					ptrCharac->yPos = min(yPos + dfSPEED_PLAYER_Y, dfRANGE_MOVE_BOTTOM);
+				}
 				break;
 			case dfPACKET_MOVE_DIR_UU:
-				ptrCharac->yPos = max(ptrCharac->yPos - dfSPEED_PLAYER_Y, dfRANGE_MOVE_TOP);
+				ptrCharac->yPos = max(yPos - dfSPEED_PLAYER_Y, dfRANGE_MOVE_TOP);
 				break;
 			case dfPACKET_MOVE_DIR_RU:
-				ptrCharac->xPos = min(ptrCharac->xPos + dfSPEED_PLAYER_X, dfRANGE_MOVE_RIGHT);
-				ptrCharac->yPos = max(ptrCharac->yPos - dfSPEED_PLAYER_Y, dfRANGE_MOVE_TOP);
+				if (xPos < dfRANGE_MOVE_RIGHT && yPos > dfRANGE_MOVE_TOP)
+				{
+					ptrCharac->xPos = min(xPos + dfSPEED_PLAYER_X, dfRANGE_MOVE_RIGHT);
+					ptrCharac->yPos = max(yPos - dfSPEED_PLAYER_Y, dfRANGE_MOVE_TOP);
+				}
 				break;
 			case dfPACKET_MOVE_DIR_RR:
-				ptrCharac->xPos = min(ptrCharac->xPos + dfSPEED_PLAYER_X, dfRANGE_MOVE_RIGHT);
+				ptrCharac->xPos = min(xPos + dfSPEED_PLAYER_X, dfRANGE_MOVE_RIGHT);
 				break;
 			case dfPACKET_MOVE_DIR_RD:
-				ptrCharac->xPos = min(ptrCharac->xPos + dfSPEED_PLAYER_X, dfRANGE_MOVE_RIGHT);
-				ptrCharac->yPos = min(ptrCharac->yPos + dfSPEED_PLAYER_Y, dfRANGE_MOVE_BOTTOM);
+				if (xPos < dfRANGE_MOVE_RIGHT && yPos < dfRANGE_MOVE_BOTTOM)
+				{
+					ptrCharac->xPos = min(xPos + dfSPEED_PLAYER_X, dfRANGE_MOVE_RIGHT);
+					ptrCharac->yPos = min(yPos + dfSPEED_PLAYER_Y, dfRANGE_MOVE_BOTTOM);
+				}
 				break;
 			case dfPACKET_MOVE_DIR_DD:
-				ptrCharac->yPos = min(ptrCharac->yPos + dfSPEED_PLAYER_Y, dfRANGE_MOVE_BOTTOM);
+				ptrCharac->yPos = min(yPos + dfSPEED_PLAYER_Y, dfRANGE_MOVE_BOTTOM);
 				break;
 			}
 

@@ -22,10 +22,10 @@
 //-----------------------------------------------------------------
 // 화면 이동 범위.
 //-----------------------------------------------------------------
-#define dfRANGE_MOVE_TOP	10
-#define dfRANGE_MOVE_LEFT	10
-#define dfRANGE_MOVE_RIGHT	6390
-#define dfRANGE_MOVE_BOTTOM	6390
+#define dfRANGE_MOVE_TOP	0
+#define dfRANGE_MOVE_LEFT	0
+#define dfRANGE_MOVE_RIGHT	6400
+#define dfRANGE_MOVE_BOTTOM	6400
 
 //---------------------------------------------------------------
 // 공격범위.
