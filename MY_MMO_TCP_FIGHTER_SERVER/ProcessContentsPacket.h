@@ -2,23 +2,7 @@
 #ifndef __PROCESS_CONTENTS_PACKET_H__
 #define	__PROCESS_CONTENTS_PACKET_H__
 #include "SerializationBuffer.h"
-
-extern	DWORD gCharacterID;
-
-struct CharacterInfo
-{
-	SOCKET	socket;
-	DWORD	characterID;
-	DWORD	dwActionTick;
-	WORD	xPos;
-	WORD	yPos;
-	WORD	actionXpos;
-	WORD	actionYpos;
-	BYTE	stop2Dir;
-	BYTE	move8Dir;
-	BYTE	action;
-	char	hp;
-};
+#include "CharacterInfo.h"
 
 struct CommonPacketHeader
 {
