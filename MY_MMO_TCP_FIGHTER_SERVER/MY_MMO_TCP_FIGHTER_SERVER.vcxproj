@@ -135,9 +135,11 @@
     <ClCompile Include="ProcessContentsPacket.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
+    <ClCompile Include="Sector.cpp" />
     <ClCompile Include="SerializationBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CharacterInfo.h" />
     <ClInclude Include="GameContentValueSetting.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Monitoring.h" />
