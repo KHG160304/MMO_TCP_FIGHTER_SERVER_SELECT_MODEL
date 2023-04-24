@@ -12,6 +12,8 @@
 #define	USER_VISIBLE_SECTOR_WIDTH	3;
 #define	USER_VISIBLE_SECTOR_HEIGHT	3;
 
+#define INVALID_CHARACTER_ID  (DWORD)(~0)
+
 struct SectorPos
 {
 	WORD xPos;
@@ -53,7 +55,7 @@ void RemoveToSector(CharacterInfo* charac);
 
 void SendAroundSector(CharacterInfo* charac, const char* buf, int size, bool excludeMe = true);
 
-void SendAroundSector(const SectorAround& aroundSectorList, const char* buf, int size);
+void SendAroundSector(const SectorAround& aroundSectorList, const char* buf, int size, DWORD id = INVALID_CHARACTER_ID);
 
 void UpdateSector(CharacterInfo* charac);
 #endif // !__SECTOR_H__

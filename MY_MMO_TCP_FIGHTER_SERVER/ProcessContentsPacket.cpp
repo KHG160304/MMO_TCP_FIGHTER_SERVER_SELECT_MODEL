@@ -268,7 +268,7 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 
 		MakePacketSyncXYPos(&packetBuf, ptrCharacter->characterID, clientXpos, clientYpos);
 		//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
-		SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), false);
 		packetBuf.ClearBuffer();
 	}
 	else
@@ -335,7 +335,7 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 
 		MakePacketSyncXYPos(&packetBuf, ptrCharacter->characterID, clientXpos, clientYpos);
 		//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
-		SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), false);
 		packetBuf.ClearBuffer();
 	}
 	else

@@ -186,7 +186,7 @@ int RingBuffer::Peek(char* const buffer, int size)
 
 int RingBuffer::MoveRear(int size)
 {
-	if (this->__freeSize < size || size <= 0)
+	if (this->__freeSize < size || size < 1)
 	{
 		return 0;
 	}
