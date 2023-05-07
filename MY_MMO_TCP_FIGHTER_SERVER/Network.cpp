@@ -256,6 +256,8 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 			break;
 		}
 
+		int beforeBodySize = tmpRecvPacketBody.GetUseSize();
+
 		//ptrRecvQueue->MoveFront(packetHeaderSize);
 		ptrRecvQueue->MoveFront(sizeof(CommonPacketHeader));
 		//tmpRecvPacketBody.MoveRear(ptrRecvQueue->Dequeue(tmpRecvPacketBody.GetRearBufferPtr(), packetBodySize));
@@ -263,6 +265,12 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 		//_Log(dfLOG_LEVEL_SYSTEM, "recv packet body size: %d", size);
 		//DispatchPacketToContents(socket, tmpRecvPacketHeader, &tmpRecvPacketBody);
 		DispatchPacketToContents(socket, (char*)&tmpRecvPacketHeader, &tmpRecvPacketBody);
+
+		if (tmpRecvPacketBody.GetUseSize() > 0)
+		{
+			int tt = tmpRecvPacketBody.GetUseSize();
+			_Log(dfLOG_LEVEL_SYSTEM, "before copy: %d, after copy: %d, process copy: %d", beforeBodySize, size, tt);
+		}
 		tmpRecvPacketBody.ClearBuffer();
 	}
 
@@ -348,10 +356,10 @@ bool DisconnectSession(Session* disconnectSession)
 
 bool SendUnicast(SOCKET socket, const char* buf, int size)
 {
-	bool result = FindSession(socket)->sendQueue.Enqueue(buf, size) > 0;
-	_Log(dfLOG_LEVEL_SYSTEM, "sessionId: %d, result: %d", socket, result);
-	//return FindSession(socket)->sendQueue.Enqueue(buf, size) > 0;
-	return result;
+	//bool result = FindSession(socket)->sendQueue.Enqueue(buf, size) > 0;
+	//_Log(dfLOG_LEVEL_SYSTEM, "sessionId: %d, result: %d", socket, result);
+	//return result;
+	return FindSession(socket)->sendQueue.Enqueue(buf, size) > 0;
 }
 
 void SendBroadcast(const char* buf, int size, SOCKET excludeSessionId)

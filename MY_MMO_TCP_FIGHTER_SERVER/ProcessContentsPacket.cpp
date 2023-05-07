@@ -5,7 +5,7 @@
 #include "Log.h"
 #include "Monitoring.h"
 #include <map>
-#include "Sector.h"
+//#include "Sector.h"
 
 #define INVALID_ACTION	0xff
 #define	INTERVAL_FPS(FRAME_COUNT)	1000 / FRAME_COUNT
@@ -51,7 +51,7 @@ void ProcessAcceptEvent(void* param)
 
 	characterList.insert({ (SOCKET)param, characInfo });
 	// 섹터에 추가
-	AddToSector(characInfo);
+	//AddToSector(characInfo);
 }
 
 void ProcessDisconnectSessionEvent(void* param)
@@ -64,7 +64,7 @@ void ProcessDisconnectSessionEvent(void* param)
 	characterList.erase((SOCKET)param);
 	
 	// 섹터에서 제거
-	RemoveToSector(disconnectCharac);
+	//RemoveToSector(disconnectCharac);
 }
 
 bool CheckIfCompletedPacket(char* packetHeader, int allRecivedPacketSize, int* outPacketBody)
@@ -268,7 +268,7 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 
 		MakePacketSyncXYPos(&packetBuf, ptrCharacter->characterID, clientXpos, clientYpos);
 		//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
-		SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), false);
+		//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), false);
 		packetBuf.ClearBuffer();
 	}
 	else
@@ -301,7 +301,7 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 	PRO_END(L"MakePacketMoveStart");
 	PRO_BEGIN(L"SendBroadcast");
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
-	SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	PRO_END(L"SendBroadcast");
 
 	ptrCharacter->dwActionTick = timeGetTime();
@@ -335,7 +335,7 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 
 		MakePacketSyncXYPos(&packetBuf, ptrCharacter->characterID, clientXpos, clientYpos);
 		//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
-		SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), false);
+		//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), false);
 		packetBuf.ClearBuffer();
 	}
 	else
@@ -349,7 +349,7 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 
 	MakePacketMoveStop(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	
-	SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
 
 	ptrCharacter->dwActionTick = timeGetTime();
@@ -391,7 +391,7 @@ bool ProcessPacketAttack1(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 
 	MakePacketAttack1(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
-	SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	return true;
 }
 
@@ -427,7 +427,7 @@ bool ProcessPacketAttack2(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 
 	MakePacketAttack2(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
-	SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	return true;
 }
 
@@ -463,7 +463,7 @@ bool ProcessPacketAttack3(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 
 	MakePacketAttack3(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
-	SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	return true;
 }
 
@@ -556,7 +556,7 @@ void Update()
 			}
 
 			// 섹터에 정보 업데이트
-			UpdateSector(ptrCharac);
+			//UpdateSector(ptrCharac);
 		}
 	}
 }
