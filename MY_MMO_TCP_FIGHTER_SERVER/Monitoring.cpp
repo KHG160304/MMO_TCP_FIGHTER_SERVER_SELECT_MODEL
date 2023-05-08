@@ -8,6 +8,7 @@ DWORD loopCnt = 0;
 DWORD startMeasurementTime = 0;
 size_t (*GetCharacterCnt)(void);
 size_t (*GetSessionCnt)(void);
+size_t(*GetSectorCharacterCnt)(void);
 
 DWORD StartMonitor()
 {
@@ -21,7 +22,7 @@ void Monitoring()
 	DWORD interval = endMeasurementTime - startMeasurementTime;
 	if (interval >= 1000)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "FPS: %d, Loop: %d, Session Count: %lld, Character Count: %lld", fps, loopCnt, GetSessionCnt(), GetCharacterCnt());
+		_Log(dfLOG_LEVEL_SYSTEM, "FPS: %d, Loop: %d, Session Count: %lld, Character Count: %lld, Sector Character Count: %lld", fps, loopCnt, GetSessionCnt(), GetCharacterCnt(), GetSectorCharacterCnt());
 		startMeasurementTime = endMeasurementTime - (interval - 1000);
 		fps = 0;
 		loopCnt = 0;
@@ -46,4 +47,9 @@ void SetCharacterCntHandle(size_t (*size)(void))
 void SetSessionCntHandle(size_t (*size)(void))
 {
 	GetSessionCnt = size;
+}
+
+void SetSectorCharacterCntHandle(size_t(*size)(void))
+{
+	GetSectorCharacterCnt = size;
 }

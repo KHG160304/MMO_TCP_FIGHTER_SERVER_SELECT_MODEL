@@ -16,4 +16,6 @@ void SetCharacterCntHandle(size_t(*size)(void));
 
 void SetSessionCntHandle(size_t(*size)(void));
 
+void SetSectorCharacterCntHandle(size_t(*size)(void));
+
 #endif // !__MONITORING_H__

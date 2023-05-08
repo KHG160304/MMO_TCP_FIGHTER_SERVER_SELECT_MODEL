@@ -30,14 +30,13 @@ void ServerControl()
 	}
 }
 
-
-
 int main(void)
 {
 	setlocale(LC_ALL, "ko");
 	InitContents();
 	SetCharacterCntHandle(GetCharacterCnt);
 	SetSessionCntHandle(GetSessionCnt);
+	SetSectorCharacterCntHandle(GetSectorCharacterCnt);
 	if (!InitNetwork())
 	{
 		ShutdownServer();
