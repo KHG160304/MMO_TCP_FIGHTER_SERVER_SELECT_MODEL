@@ -331,7 +331,6 @@ bool DisconnectSession(SOCKET socket)
 	closesocket(socket);
 	sessionList.erase(socket);
 	
-	
 	return true;
 }
 

@@ -5,7 +5,7 @@
 #include "Log.h"
 #include "Monitoring.h"
 #include <map>
-//#include "Sector.h"
+#include "Sector.h"
 
 #define INVALID_ACTION	0xff
 #define	INTERVAL_FPS(FRAME_COUNT)	1000 / FRAME_COUNT
@@ -28,30 +28,21 @@ void ProcessAcceptEvent(void* param)
 	CharacterInfo* characInfo = CreateCharacterInfo((SOCKET)param);
 
 	SerializationBuffer sendPacket;
-	MakePacketCreateMyCharater(&sendPacket, characInfo->characterID, dfPACKET_MOVE_DIR_LL, characInfo->xPos, characInfo->yPos, defCHARACTER_DEFAULT_HP);
+	MakePacketCreateMyCharacter(&sendPacket, characInfo->characterID, dfPACKET_MOVE_DIR_LL, characInfo->xPos, characInfo->yPos, defCHARACTER_DEFAULT_HP);
 	int i = SendUnicast((SOCKET)param, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 	_Log(dfLOG_LEVEL_DEBUG, "CREATE CHARACTER_ID[%d] PACKET SEND [%d]"
 		, characInfo->characterID, i);
 
 	ConvertPacketCreateMyCharaterToCreateOtherCharacter(&sendPacket);
 	// 임시로 일단
-	SendBroadcast(sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), (SOCKET)param);
+	//SendBroadcast(sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), (SOCKET)param);
 	// Send Sector 내주변 섹터;
-
-	CharacterInfo* otherCharac;
-	std::map<SOCKET, CharacterInfo*>::iterator iter = characterList.begin();
-	for (; iter != characterList.end(); ++iter)
-	{
-		sendPacket.ClearBuffer();
-		otherCharac = iter->second;
-		MakePacketCreateOtherCharater(&sendPacket, otherCharac->characterID
-			, otherCharac->stop2Dir, otherCharac->xPos, otherCharac->yPos, otherCharac->hp);
-		SendUnicast((SOCKET)param, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
-	}
+	SendSectorAround(characInfo, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), true);
+	SendToMeOfSectorAroundCharacterInfo(characInfo);
 
 	characterList.insert({ (SOCKET)param, characInfo });
 	// 섹터에 추가
-	//AddToSector(characInfo);
+	Sector_AddCharacter(characInfo);
 }
 
 void ProcessDisconnectSessionEvent(void* param)
@@ -60,10 +51,12 @@ void ProcessDisconnectSessionEvent(void* param)
 	//_Log(dfLOG_LEVEL_SYSTEM, "Disconnect character ID: %d, X: %d, Y: %d", charac->characterID, charac->)
 	CharacterInfo* disconnectCharac = FindCharacter((SOCKET)param);
 	MakePacketDeleteCharacter(&sendPacket, disconnectCharac->characterID);
-	SendBroadcast(sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), (SOCKET)param);
+	//SendBroadcast(sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), (SOCKET)param);
+	SendSectorAround(disconnectCharac, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 	characterList.erase((SOCKET)param);
 	
 	// 섹터에서 제거
+	Sector_RemoveCharacter(disconnectCharac);
 	//RemoveToSector(disconnectCharac);
 }
 
@@ -94,6 +87,13 @@ CharacterInfo* CreateCharacterInfo(UINT_PTR sessionKey)
 	characInfo->stop2Dir = dfPACKET_MOVE_DIR_LL;
 	characInfo->xPos = rand() % dfRANGE_MOVE_RIGHT;
 	characInfo->yPos = rand() % dfRANGE_MOVE_BOTTOM;
+
+	characInfo->xPos -= (characInfo->xPos % dfSIX_FRAME_X_DISTANCE);
+	characInfo->yPos -= (characInfo->yPos % dfSIX_FRAME_Y_DISTANCE);
+
+	SectorPos sectorPos = ConvertWorldPosToSectorPos(characInfo->xPos, characInfo->yPos);
+	characInfo->curPos = sectorPos;
+	characInfo->oldPos = sectorPos;
 
 	gCharacterID += 1;
 	return characInfo;
@@ -151,7 +151,7 @@ void MakePacketSyncXYPos(SerializationBuffer* packetBuf, DWORD id, WORD xPos, WO
 	(*packetBuf) << id << xPos << yPos;
 }
 
-void MakePacketCreateMyCharater(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp)
+void MakePacketCreateMyCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp)
 {
 	CommonPacketHeader packetHeader;
 	packetHeader.byCode = dfPACKET_CODE;
@@ -162,7 +162,7 @@ void MakePacketCreateMyCharater(SerializationBuffer* packetBuf, DWORD id, BYTE s
 	(*packetBuf) << id << stop2Dir << xPos << yPos << hp;
 }
 
-void MakePacketCreateOtherCharater(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp)
+void MakePacketCreateOtherCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp)
 {
 	CommonPacketHeader packetHeader;
 	packetHeader.byCode = dfPACKET_CODE;
@@ -268,7 +268,7 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 
 		MakePacketSyncXYPos(&packetBuf, ptrCharacter->characterID, clientXpos, clientYpos);
 		//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
-		//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), false);
+		SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), true);
 		packetBuf.ClearBuffer();
 	}
 	else
@@ -301,7 +301,7 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 	PRO_END(L"MakePacketMoveStart");
 	PRO_BEGIN(L"SendBroadcast");
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
-	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+	SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	PRO_END(L"SendBroadcast");
 
 	ptrCharacter->dwActionTick = timeGetTime();
@@ -335,7 +335,7 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 
 		MakePacketSyncXYPos(&packetBuf, ptrCharacter->characterID, clientXpos, clientYpos);
 		//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
-		//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), false);
+		SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), true);
 		packetBuf.ClearBuffer();
 	}
 	else
@@ -348,9 +348,8 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 	ptrCharacter->stop2Dir = stop2Dir;
 
 	MakePacketMoveStop(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
-	
-	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
+	SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 
 	ptrCharacter->dwActionTick = timeGetTime();
 	ptrCharacter->actionXpos = clientXpos;
@@ -378,7 +377,8 @@ bool ProcessPacketAttack1(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 		clientYpos = ptrCharacter->yPos;
 
 		MakePacketSyncXYPos(&packetBuf, ptrCharacter->characterID, clientXpos, clientYpos);
-		SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), true);
 		packetBuf.ClearBuffer();
 	}
 	else
@@ -391,7 +391,7 @@ bool ProcessPacketAttack1(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 
 	MakePacketAttack1(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
-	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+	SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	return true;
 }
 
@@ -414,7 +414,8 @@ bool ProcessPacketAttack2(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 		clientYpos = ptrCharacter->yPos;
 
 		MakePacketSyncXYPos(&packetBuf, ptrCharacter->characterID, clientXpos, clientYpos);
-		SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), true);
 		packetBuf.ClearBuffer();
 	}
 	else
@@ -427,7 +428,7 @@ bool ProcessPacketAttack2(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 
 	MakePacketAttack2(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
-	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+	SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	return true;
 }
 
@@ -450,7 +451,8 @@ bool ProcessPacketAttack3(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 		clientYpos = ptrCharacter->yPos;
 
 		MakePacketSyncXYPos(&packetBuf, ptrCharacter->characterID, clientXpos, clientYpos);
-		SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), true);
 		packetBuf.ClearBuffer();
 	}
 	else
@@ -463,7 +465,7 @@ bool ProcessPacketAttack3(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacke
 
 	MakePacketAttack3(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	//SendBroadcast(packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharacter->socket);
-	//SendAroundSector(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+	SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 	return true;
 }
 
@@ -555,8 +557,16 @@ void Update()
 				break;
 			}
 
+			_Log(dfLOG_LEVEL_DEBUG, "[ID:%d] run x: %d/y: %d"
+				, ptrCharac->characterID, ptrCharac->xPos, ptrCharac->yPos);
+
 			// 섹터에 정보 업데이트
-			//UpdateSector(ptrCharac);
+			if (Sector_UpdateCharacter(ptrCharac))
+			{
+				CharacterSectorUpdatePacket(ptrCharac);
+				_Log(dfLOG_LEVEL_DEBUG, "[ptrChararc curPos][ID:%d] SectorPosX: %d/SectorPosY: %d"
+					, ptrCharac->characterID, ptrCharac->curPos.xPos, ptrCharac->curPos.yPos);
+			}
 		}
 	}
 }

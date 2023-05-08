@@ -1,538 +1,287 @@
 #include "Log.h"
-#include "CharacterInfo.h"
 #include "Sector.h"
+#include "CharacterInfo.h"
 #include "Network.h"
 #include "ProcessContentsPacket.h"
+#include "GameContentValueSetting.h"
 
-std::map<DWORD, CharacterInfo*> sectorList[dfSECTOR_HEIGHT][dfSECTOR_WIDTH];
-std::map<DWORD, SectorHistory> sectorHistoryList;
+static const int SECTOR_HEIGHT = dfSECTOR_HEIGHT;
+static const int SECTOR_WIDTH = dfSECTOR_WIDTH;
 
-void GetAroundSector(CharacterInfo* charac, SectorAround* outSectorAround)
+std::map<DWORD, CharacterInfo*> sectorList[SECTOR_HEIGHT][SECTOR_WIDTH];
+
+SectorPos ConvertWorldPosToSectorPos(WORD worldXPos, WORD worldYPos)
 {
-	WORD sectorXpos = charac->xPos / dfSIX_FRAME_X_DISTANCE;
-	WORD sectorYpos = charac->yPos / dfSIX_FRAME_Y_DISTANCE;
+	return {
+		(WORD)(worldXPos / dfSIX_FRAME_X_DISTANCE),
+		(WORD)(worldYPos / dfSIX_FRAME_Y_DISTANCE)
+	};
+}
 
-	WORD sectorXStart;
-	WORD sectorXEnd;
-	WORD sectorYStart;
-	WORD sectorYEnd;
-	if (sectorXpos == 0)
-	{
-		sectorXStart = 0;
-		sectorXEnd = 1;
-	}
-	else if (sectorXpos == dfSECTOR_WIDTH - 1)
-	{
-		sectorXStart = dfSECTOR_WIDTH - 2;
-		sectorXEnd = dfSECTOR_WIDTH - 1;
-	}
-	else
-	{
-		sectorXStart = sectorXpos - 1;
-		sectorXEnd = sectorXpos + 1;
-	}
+void Sector_AddCharacter(CharacterInfo* charac)
+{
+	sectorList[charac->curPos.yPos][charac->curPos.xPos].insert({ charac->characterID, charac });
+}
 
-	if (sectorYpos == 0)
+void Sector_RemoveCharacter(CharacterInfo* charac)
+{
+	sectorList[charac->curPos.yPos][charac->curPos.xPos].erase(charac->characterID);
+}
+
+bool Sector_UpdateCharacter(CharacterInfo* charac)
+{
+	SectorPos curPos = ConvertWorldPosToSectorPos(charac->xPos, charac->yPos);
+
+	if (curPos.yPos >= SECTOR_HEIGHT || curPos.xPos >= SECTOR_WIDTH)
 	{
-		sectorYStart = 0;
-		sectorYEnd = 1;
-	}
-	else if (sectorYpos == dfSECTOR_HEIGHT - 1)
-	{
-		sectorYStart = dfSECTOR_HEIGHT - 2;
-		sectorYEnd = dfSECTOR_HEIGHT - 1;
-	}
-	else
-	{
-		sectorYStart = sectorYpos - 1;
-		sectorYEnd = sectorYpos + 1;
+		DisconnectSession(charac->socket);
+		return false;
 	}
 
-	int userSectorWidth = sectorXEnd - sectorXStart + 1;
-	int userSectorHeight = sectorYEnd - sectorYStart + 1;
-	outSectorAround->cnt = userSectorWidth * userSectorHeight;
-	for (int y = 0; y < userSectorHeight; ++y)
+	if ( *((DWORD*)&curPos) == *((DWORD*)&(charac->curPos)) )
 	{
-		for (int x = 0; x < userSectorWidth; ++x)
+		return false;
+	}
+
+	charac->oldPos.yPos = charac->curPos.yPos;
+	charac->oldPos.xPos = charac->curPos.xPos;
+	Sector_RemoveCharacter(charac);
+
+	charac->curPos = curPos;
+	Sector_AddCharacter(charac);
+
+	return true;
+}
+
+size_t GetSectorCharacterCnt(void)
+{
+	size_t cnt = 0;
+	for (int y = 0; y < dfSECTOR_HEIGHT; ++y)
+	{
+		for (int x = 0; x < dfSECTOR_WIDTH; ++x)
 		{
-			outSectorAround->around[y * userSectorWidth + x].xPos = sectorXStart + x;
-			outSectorAround->around[y * userSectorWidth + x].yPos = sectorYStart + y;
-
+			cnt += sectorList[y][x].size();
 		}
 	}
+	return cnt;
 }
 
-void GetAroundSector(SectorPos pos, SectorAround* outSectorAround)
+void GetSectorAround(SectorPos findSector, SectorAround* pSectorAround, bool includeFindSector)
 {
-	WORD sectorXpos = pos.xPos;
-	WORD sectorYpos = pos.yPos;
-
-	WORD sectorXStart;
-	WORD sectorXEnd;
-	WORD sectorYStart;
-	WORD sectorYEnd;
-	if (sectorXpos == 0)
-	{
-		sectorXStart = 0;
-		sectorXEnd = 1;
-	}
-	else if (sectorXpos == dfSECTOR_WIDTH - 1)
-	{
-		sectorXStart = dfSECTOR_WIDTH - 2;
-		sectorXEnd = dfSECTOR_WIDTH - 1;
-	}
-	else
-	{
-		sectorXStart = sectorXpos - 1;
-		sectorXEnd = sectorXpos + 1;
-	}
-
-	if (sectorYpos == 0)
-	{
-		sectorYStart = 0;
-		sectorYEnd = 1;
-	}
-	else if (sectorYpos == dfSECTOR_HEIGHT - 1)
-	{
-		sectorYStart = dfSECTOR_HEIGHT - 2;
-		sectorYEnd = dfSECTOR_HEIGHT - 1;
-	}
-	else
-	{
-		sectorYStart = sectorYpos - 1;
-		sectorYEnd = sectorYpos + 1;
-	}
-
-	int userSectorWidth = sectorXEnd - sectorXStart + 1;
-	int userSectorHeight = sectorYEnd - sectorYStart + 1;
-	outSectorAround->cnt = userSectorWidth * userSectorHeight;
-	for (int y = 0; y < userSectorHeight; ++y)
-	{
-		for (int x = 0; x < userSectorWidth; ++x)
-		{
-			outSectorAround->around[y * userSectorWidth + x].xPos = sectorXStart + x;
-			outSectorAround->around[y * userSectorWidth + x].yPos = sectorYStart + y;
-
-		}
-	}
-}
-
-void GetLeftUpSector(SectorPos pos, SectorAround* outSectorAround)
-{
-	if (pos.xPos == 0 && pos.yPos == 0)
-	{
-		outSectorAround->cnt = 0;
-	}
-	else if (pos.xPos == 0)
-	{
-		outSectorAround->around[0].xPos = 0;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
-
-		outSectorAround->around[1].xPos = 1;
-		outSectorAround->around[1].yPos = pos.yPos - 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else if (pos.yPos == 0)
-	{
-		outSectorAround->around[0].xPos = pos.xPos - 1;
-		outSectorAround->around[0].yPos = 0;
-
-		outSectorAround->around[1].xPos = pos.xPos - 1;
-		outSectorAround->around[1].yPos = 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else
-	{
-		outSectorAround->around[0].xPos = pos.xPos;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
-
-		outSectorAround->around[1].xPos = pos.xPos + 1;
-		outSectorAround->around[1].yPos = pos.yPos - 1;
-
-		outSectorAround->around[2].xPos = pos.xPos - 1;
-		outSectorAround->around[2].yPos = pos.yPos;
-
-		outSectorAround->around[3].xPos = pos.xPos - 1;
-		outSectorAround->around[3].yPos = pos.yPos + 1;
-
-		outSectorAround->around[4].xPos = pos.xPos - 1;
-		outSectorAround->around[4].yPos = pos.yPos - 1;
-
-		outSectorAround->cnt = 5;
-	}
-}
-
-void GetLeftDownSector(SectorPos pos, SectorAround* outSectorAround)
-{
-	if (pos.xPos == 0 && pos.yPos == dfSECTOR_HEIGHT - 1)
-	{
-		outSectorAround->cnt = 0;
-		return;
-	}
-	else if (pos.xPos == 0)
-	{
-		outSectorAround->around[0].xPos = 0;
-		outSectorAround->around[0].yPos = pos.yPos + 1;
-
-		outSectorAround->around[1].xPos = 1;
-		outSectorAround->around[1].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else if (pos.xPos == dfSECTOR_HEIGHT - 1)
-	{
-		outSectorAround->around[0].xPos = pos.xPos;
-		outSectorAround->around[0].yPos = dfSECTOR_HEIGHT - 1;
-
-		outSectorAround->around[1].xPos = pos.yPos;
-		outSectorAround->around[1].yPos = dfSECTOR_HEIGHT - 2;
-
-		outSectorAround->cnt = 2;
-	}
-	else
-	{
-		outSectorAround->around[0].xPos = pos.xPos;
-		outSectorAround->around[0].yPos = pos.yPos + 1;
-
-		outSectorAround->around[1].xPos = pos.xPos + 1;
-		outSectorAround->around[1].yPos = pos.yPos + 1;
-
-		outSectorAround->around[2].xPos = pos.xPos - 1;
-		outSectorAround->around[2].yPos = pos.yPos;
-
-		outSectorAround->around[3].xPos = pos.xPos - 1;
-		outSectorAround->around[3].yPos = pos.yPos - 1;
-
-		outSectorAround->around[4].xPos = pos.xPos - 1;
-		outSectorAround->around[4].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 5;
-	}
-}
-
-void GetRightUpSector(SectorPos pos, SectorAround* outSectorAround)
-{
-	if (pos.xPos == dfSECTOR_WIDTH - 1 && pos.yPos == 0)
-	{
-		outSectorAround->cnt = 0;
-	}
-	else if (pos.xPos == dfSECTOR_WIDTH - 1)
-	{
-		outSectorAround->around[0].xPos = dfSECTOR_WIDTH - 1;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
-
-		outSectorAround->around[1].xPos = dfSECTOR_WIDTH - 2;
-		outSectorAround->around[1].yPos = pos.yPos - 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else if (pos.yPos == 0)
-	{
-		outSectorAround->around[0].xPos = dfSECTOR_WIDTH - 1;
-		outSectorAround->around[0].yPos = 0;
-
-		outSectorAround->around[1].xPos = dfSECTOR_WIDTH - 1;
-		outSectorAround->around[1].yPos = 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else
-	{
-		outSectorAround->around[0].xPos = pos.xPos;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
-
-		outSectorAround->around[1].xPos = pos.xPos - 1;
-		outSectorAround->around[1].yPos = pos.yPos - 1;
-
-		outSectorAround->around[2].xPos = pos.xPos + 1;
-		outSectorAround->around[2].yPos = pos.yPos;
-
-		outSectorAround->around[3].xPos = pos.xPos + 1;
-		outSectorAround->around[3].yPos = pos.yPos + 1;
-
-		outSectorAround->around[4].xPos = pos.xPos + 1;
-		outSectorAround->around[4].yPos = pos.yPos - 1;
-
-		outSectorAround->cnt = 5;
-	}
-}
-
-void GetRightDownSector(SectorPos pos, SectorAround* outSectorAround)
-{
-	if (pos.xPos == dfSECTOR_WIDTH - 1 && pos.yPos == dfSECTOR_HEIGHT - 1)
-	{
-		outSectorAround->cnt = 0;
-	}
-	else if (pos.xPos == dfSECTOR_WIDTH - 1)
-	{
-		outSectorAround->around[0].xPos = dfSECTOR_WIDTH - 1;
-		outSectorAround->around[0].yPos = pos.yPos + 1;
-
-		outSectorAround->around[1].xPos = dfSECTOR_WIDTH - 2;
-		outSectorAround->around[1].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else if (pos.yPos == dfSECTOR_HEIGHT - 1)
-	{
-		outSectorAround->around[0].xPos = pos.xPos + 1;
-		outSectorAround->around[0].yPos = dfSECTOR_HEIGHT - 1;
-
-		outSectorAround->around[1].xPos = pos.xPos + 1;
-		outSectorAround->around[1].yPos = dfSECTOR_HEIGHT - 2;
-
-		outSectorAround->cnt = 2;
-	}
-	else
-	{
-		outSectorAround->around[0].xPos = pos.xPos + 1;
-		outSectorAround->around[0].yPos = pos.yPos;
-
-		outSectorAround->around[1].xPos = pos.xPos + 1;
-		outSectorAround->around[1].yPos = pos.yPos - 1;
-
-		outSectorAround->around[2].xPos = pos.xPos;
-		outSectorAround->around[2].yPos = pos.yPos + 1;
-
-		outSectorAround->around[3].xPos = pos.xPos - 1;
-		outSectorAround->around[3].yPos = pos.yPos + 1;
-
-		outSectorAround->around[4].xPos = pos.xPos + 1;
-		outSectorAround->around[4].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 5;
-	}
-}
-
-void GetLeftSector(SectorPos pos, SectorAround* outSectorAround)
-{
-
-	if (pos.xPos == 0)
-	{
-		outSectorAround->cnt = 0;
-		return;
-	}
-
-	if (pos.yPos == 0)
-	{
-		outSectorAround->around[0].xPos = pos.xPos - 1;
-		outSectorAround->around[0].yPos = pos.yPos;
-
-		outSectorAround->around[1].xPos = pos.xPos - 1;
-		outSectorAround->around[1].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else if (pos.yPos == dfSECTOR_HEIGHT - 1)
-	{
-		outSectorAround->around[0].xPos = pos.xPos - 1;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
-
-		outSectorAround->around[1].xPos = pos.xPos - 1;
-		outSectorAround->around[1].yPos = pos.yPos;
-
-		outSectorAround->cnt = 2;
-	}
-	else
-	{
-		outSectorAround->around[0].xPos = pos.xPos - 1;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
-
-		outSectorAround->around[1].xPos = pos.xPos - 1;
-		outSectorAround->around[1].yPos = pos.yPos;
-
-		outSectorAround->around[2].xPos = pos.xPos - 1;
-		outSectorAround->around[2].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 3;
-	}
-}
-
-void GetRightSector(SectorPos pos, SectorAround* outSectorAround)
-{
-	if (pos.xPos == dfSECTOR_WIDTH - 1)
-	{
-		outSectorAround->cnt = 0;
-		return;
-	}
-
-	if (pos.yPos == 0)
-	{
-		outSectorAround->around[0].xPos = pos.xPos + 1;
-		outSectorAround->around[0].yPos = pos.yPos;
-
-		outSectorAround->around[1].xPos = pos.xPos + 1;
-		outSectorAround->around[1].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else if (pos.yPos == dfSECTOR_HEIGHT - 1)
-	{
-		outSectorAround->around[0].xPos = pos.xPos + 1;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
-
-		outSectorAround->around[1].xPos = pos.xPos + 1;
-		outSectorAround->around[1].yPos = pos.yPos;
-
-		outSectorAround->cnt = 2;
-	}
-	else
-	{
-		outSectorAround->around[0].xPos = pos.xPos + 1;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
-
-		outSectorAround->around[1].xPos = pos.xPos + 1;
-		outSectorAround->around[1].yPos = pos.yPos;
-
-		outSectorAround->around[2].xPos = pos.xPos + 1;
-		outSectorAround->around[2].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 3;
-	}
-
+	WORD y, x;
+	WORD endYPos = findSector.yPos + 1;
+	WORD endXPos = findSector.xPos + 1;
 	
-}
-
-void GetUpSector(SectorPos pos, SectorAround* outSectorAround)
-{
-	if (pos.yPos == 0)
+	if (includeFindSector == false)
 	{
-		outSectorAround->cnt = 0;
+		int idx = 0;
+		for (y = endYPos - 2; y <= endYPos; ++y)
+		{
+			if (y < 0 || y >= dfSECTOR_HEIGHT)
+			{
+				continue;
+			}
+			for (x = endXPos - 2; x <= endXPos; ++x)
+			{
+				if (x < 0 || x >= dfSECTOR_WIDTH)
+				{
+					continue;
+				}
+
+				if (findSector.xPos == x && findSector.yPos == y)
+				{
+					continue;
+				}
+
+				pSectorAround->around[idx++] = { x, y };
+			}
+		}
+		pSectorAround->cnt = idx;
+
 		return;
 	}
 
-	if (pos.xPos == 0)
+	int idx = 0;
+	for (y = endYPos - 2; y <= endYPos; ++y)
 	{
-		outSectorAround->around[0].xPos = pos.xPos;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
+		if (y < 0 || y >= dfSECTOR_HEIGHT)
+		{
+			continue;
+		}
+		for (x = endXPos - 2; x <= endXPos; ++x)
+		{
+			if (x < 0 || x >= dfSECTOR_WIDTH)
+			{
+				continue;
+			}
 
-		outSectorAround->around[1].xPos = pos.xPos + 1;
-		outSectorAround->around[1].yPos = pos.yPos - 1;
-
-		outSectorAround->cnt = 2;
+			pSectorAround->around[idx++] = {x, y};
+		}
 	}
-	else if (pos.xPos == dfSECTOR_WIDTH - 1)
-	{
-		outSectorAround->around[0].xPos = pos.xPos - 1;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
 
-		outSectorAround->around[1].xPos = pos.xPos;
-		outSectorAround->around[1].yPos = pos.yPos - 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else
-	{
-		outSectorAround->around[0].xPos = pos.xPos - 1;
-		outSectorAround->around[0].yPos = pos.yPos - 1;
-
-		outSectorAround->around[1].xPos = pos.xPos;
-		outSectorAround->around[1].yPos = pos.yPos - 1;
-
-		outSectorAround->around[2].xPos = pos.xPos + 1;
-		outSectorAround->around[2].yPos = pos.yPos - 1;
-
-		outSectorAround->cnt = 3;
-	}
+	pSectorAround->cnt = idx;
 }
 
-void GetDownSector(SectorPos pos, SectorAround* outSectorAround)
+void GetUpdateSectorAround(CharacterInfo* ptrCharac, SectorAround* ptrRemoveSectors, SectorAround* ptrAddSectors)
 {
-	if (pos.yPos == dfSECTOR_HEIGHT - 1)
+	int idxOld;
+	int idxCur;
+	bool isFind;
+	int removeSectorsCnt = 0;
+	int addSectorsCnt = 0;
+
+	SectorAround oldSectors;
+	SectorAround curSectors;
+	GetSectorAround(ptrCharac->oldPos, &oldSectors);
+	GetSectorAround(ptrCharac->curPos, &curSectors);
+
+	for (idxOld = 0; idxOld < oldSectors.cnt; ++idxOld)
 	{
-		outSectorAround->cnt = 0;
-		return;
+		isFind = false;
+		for (idxCur = 0; idxCur < curSectors.cnt; ++idxCur)
+		{
+			if (*((DWORD*)(oldSectors.around + idxOld)) == *((DWORD*)(curSectors.around + idxCur)))
+			{
+				isFind = true;
+				break;
+			}
+		}
+
+		if (isFind == false)
+		{
+			ptrRemoveSectors->around[removeSectorsCnt++] = oldSectors.around[idxOld];
+		}
 	}
+	ptrRemoveSectors->cnt = removeSectorsCnt;
 
-	if (pos.xPos == 0)
+	for (idxCur = 0; idxCur < curSectors.cnt; ++idxCur)
 	{
-		outSectorAround->around[0].xPos = pos.xPos;
-		outSectorAround->around[0].yPos = pos.yPos + 1;
+		isFind = false;
+		for (idxOld = 0; idxOld < oldSectors.cnt; ++idxOld)
+		{
+			if (*((DWORD*)(curSectors.around + idxCur)) == *((DWORD*)(oldSectors.around + idxOld)))
+			{
+				isFind = true;
+				break;
+			}
+		}
 
-		outSectorAround->around[1].xPos = pos.xPos + 1;
-		outSectorAround->around[1].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 2;
+		if (isFind == false)
+		{
+			ptrAddSectors->around[addSectorsCnt++] = curSectors.around[idxCur];
+		}
 	}
-	else if (pos.xPos == dfSECTOR_WIDTH - 1)
+	ptrAddSectors->cnt = addSectorsCnt;
+}
+
+void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
+{
+	SerializationBuffer packetBuf;
+
+	SectorAround removeSectors;
+	SectorAround addSectors;
+
+	int idxRemoveSectors;
+	int idxAddSectors;
+
+	SectorPos removeSectorPos;
+	SectorPos addSectorPos;
+
+	CharacterInfo* addSecterCharac;
+
+	GetUpdateSectorAround(ptrCharac, &removeSectors, &addSectors);
+
+	/*
+		removeSectors에 존재하는 캐릭터들에게,
+		ptrCharac의 정보를 화면에서 지우라고 함
+	*/
+	MakePacketDeleteCharacter(&packetBuf, ptrCharac->characterID);
+	for (idxRemoveSectors = 0; idxRemoveSectors < removeSectors.cnt; ++idxRemoveSectors)
 	{
-		outSectorAround->around[0].xPos = pos.xPos - 1;
-		outSectorAround->around[0].yPos = pos.yPos + 1;
-
-		outSectorAround->around[1].xPos = pos.xPos;
-		outSectorAround->around[1].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 2;
-	}
-	else
-	{
-		outSectorAround->around[0].xPos = pos.xPos - 1;
-		outSectorAround->around[0].yPos = pos.yPos + 1;
-
-		outSectorAround->around[1].xPos = pos.xPos;
-		outSectorAround->around[1].yPos = pos.yPos + 1;
-
-		outSectorAround->around[2].xPos = pos.xPos + 1;
-		outSectorAround->around[2].yPos = pos.yPos + 1;
-
-		outSectorAround->cnt = 3;
+		SendUnicastSector(removeSectors.around[idxRemoveSectors], packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharac->characterID);
 	}
 	
-}
-
-SectorPos ConvertCharcterPosToSectorPos(CharacterInfo* charac)
-{
-	SectorPos pos;
-	pos.xPos = charac->xPos / dfSIX_FRAME_X_DISTANCE;
-	pos.yPos = charac->yPos / dfSIX_FRAME_Y_DISTANCE;
-	return pos;
-}
-
-void AddToSector(CharacterInfo* charac)
-{
-	WORD sectorXpos = charac->xPos / dfSIX_FRAME_X_DISTANCE;
-	WORD sectorYpos = charac->yPos / dfSIX_FRAME_Y_DISTANCE;
-
-	sectorList[sectorYpos][sectorXpos].insert({ charac->characterID, charac });
-	SectorHistory history;
-	history.prevSectorPos = { sectorXpos, sectorYpos };
-	sectorHistoryList.insert({ charac->characterID,  history });
-}
-
-void AddToSector(SectorPos pos, CharacterInfo* charac)
-{
-	sectorList[pos.yPos][pos.xPos].insert({ charac->characterID, charac });
-}
-
-void RemoveToSector(CharacterInfo* charac)
-{
-	WORD sectorXpos = charac->xPos / dfSIX_FRAME_X_DISTANCE;
-	WORD sectorYpos = charac->yPos / dfSIX_FRAME_Y_DISTANCE;
-
-	sectorList[sectorYpos][sectorXpos].erase(charac->characterID);
-}
-
-void RemoveToSector(SectorPos pos, CharacterInfo* charac)
-{
-	sectorList[pos.yPos][pos.xPos].erase(charac->characterID);
-}
-
-void SendAroundSector(CharacterInfo* charac, const char* buf, int size, bool excludeMe)
-{
-	SectorAround aroundSectorList;
-	GetAroundSector(charac, &aroundSectorList);
-
-	SectorPos sectorPos;
-
-	if (excludeMe == false)
+	/*
+		ptrCharac에개 존재하는 캐릭터들에게,
+		removeSectors의 정보를 화면에서 지우라고 함
+	*/
+	for (idxRemoveSectors = 0; idxRemoveSectors < removeSectors.cnt; ++idxRemoveSectors)
 	{
-		for (int i = 0; i < aroundSectorList.cnt; ++i)
+		removeSectorPos = removeSectors.around[idxRemoveSectors];
+		std::map<DWORD, CharacterInfo*>& removeCharacterMap = sectorList[removeSectorPos.yPos][removeSectorPos.xPos];
+		std::map<DWORD, CharacterInfo*>::iterator iter = removeCharacterMap.begin();
+		for (; iter != removeCharacterMap.end(); ++iter)
 		{
-			sectorPos = aroundSectorList.around[i];
-			std::map<DWORD, CharacterInfo*>::iterator iter = sectorList[sectorPos.yPos][sectorPos.xPos].begin();
-			for (; iter != sectorList[sectorPos.yPos][sectorPos.xPos].end(); ++ iter)
+			if (iter->first == ptrCharac->characterID)
+			{
+				continue;
+			}
+			packetBuf.ClearBuffer();
+			MakePacketDeleteCharacter(&packetBuf, iter->first);
+			SendUnicast(ptrCharac->socket, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		}
+	}
+
+	/*
+		이동 중 새로 보이는 시야에 존재하는 캐릭터들에게
+		이동 하는 캐릭터의 정보를 전송;
+	*/
+	packetBuf.ClearBuffer();
+	MakePacketCreateOtherCharacter(&packetBuf, ptrCharac->characterID
+		, ptrCharac->stop2Dir, ptrCharac->xPos, ptrCharac->yPos, ptrCharac->hp);
+	MakePacketMoveStart(&packetBuf, ptrCharac->characterID, ptrCharac->move8Dir, ptrCharac->xPos, ptrCharac->yPos);
+	for (idxAddSectors = 0; idxAddSectors < addSectors.cnt; ++idxAddSectors)
+	{
+		SendUnicastSector(addSectors.around[idxAddSectors], packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharac->characterID);
+	}
+
+	/*
+		새로 보이는 시야에 있는 캐릭터 들의 정보를 내게 가져온다.
+		이동 하는 캐릭터의 정보를 전송;
+	*/
+	for (idxAddSectors = 0; idxAddSectors < addSectors.cnt; ++idxAddSectors)
+	{
+		addSectorPos = addSectors.around[idxAddSectors];
+		std::map<DWORD, CharacterInfo*>& addCharacterMap = sectorList[addSectorPos.yPos][addSectorPos.xPos];
+		std::map<DWORD, CharacterInfo*>::iterator iter = addCharacterMap.begin();
+		for (; iter != addCharacterMap.end(); ++iter)
+		{
+			if (iter->first == ptrCharac->characterID)
+			{
+				continue;
+			}
+			packetBuf.ClearBuffer();
+
+			addSecterCharac = iter->second;
+			MakePacketCreateOtherCharacter(&packetBuf, addSecterCharac->characterID
+				, addSecterCharac->stop2Dir, addSecterCharac->xPos, addSecterCharac->yPos, addSecterCharac->hp);			
+
+			switch (addSecterCharac->action)
+			{
+			case dfPACKET_MOVE_DIR_LL:
+			case dfPACKET_MOVE_DIR_LU:
+			case dfPACKET_MOVE_DIR_UU:
+			case dfPACKET_MOVE_DIR_RU:
+			case dfPACKET_MOVE_DIR_RR:
+			case dfPACKET_MOVE_DIR_RD:
+			case dfPACKET_MOVE_DIR_DD:
+			case dfPACKET_MOVE_DIR_LD:
+				MakePacketMoveStart(&packetBuf, addSecterCharac->characterID, addSecterCharac->move8Dir, addSecterCharac->xPos, addSecterCharac->yPos);
+			}
+
+			SendUnicast(ptrCharac->socket, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+		}
+	}
+}
+
+void SendUnicastSector(SectorPos target, const char* buf, int size, DWORD excludeCharacterID)
+{
+	if (excludeCharacterID != INVALID_CHARACTER_ID)
+	{
+		std::map<DWORD, CharacterInfo*>::iterator iter = sectorList[target.yPos][target.xPos].begin();
+		for (; iter != sectorList[target.yPos][target.xPos].end(); ++iter)
+		{
+			if (excludeCharacterID != iter->first)
 			{
 				SendUnicast(iter->second->socket, buf, size);
 			}
@@ -540,237 +289,54 @@ void SendAroundSector(CharacterInfo* charac, const char* buf, int size, bool exc
 		return;
 	}
 
-	for (int i = 0; i < aroundSectorList.cnt; ++i)
+	std::map<DWORD, CharacterInfo*>::iterator iter = sectorList[target.yPos][target.xPos].begin();
+	for (; iter != sectorList[target.yPos][target.xPos].end(); ++iter)
 	{
-		sectorPos = aroundSectorList.around[i];
-		std::map<DWORD, CharacterInfo*>::iterator iter = sectorList[sectorPos.yPos][sectorPos.xPos].begin();
-		for (; iter != sectorList[sectorPos.yPos][sectorPos.xPos].end(); ++iter)
-		{
-			if (iter->first != charac->characterID)
-			{
-				SendUnicast(iter->second->socket, buf, size);
-			}
-		}
+		SendUnicast(iter->second->socket, buf, size);
 	}
 }
 
-void SendAroundSector(const SectorAround& aroundSectorList, const char* buf, int size, DWORD id)
+void SendSectorAround(CharacterInfo* ptrCharac, const char* buf, int size, bool includeMe)
 {
-	_Log(dfLOG_LEVEL_SYSTEM, "Send AroundSector packet size: %d, charac id: %d", size, id);
-	for (int i = 0; i < size; ++i)
+	SectorAround sendTargetSectors;
+	GetSectorAround(ptrCharac->curPos, &sendTargetSectors, false);
+
+	int idxSectors;
+	for (idxSectors = 0; idxSectors < sendTargetSectors.cnt; ++idxSectors)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "0x%02x", buf[i]);
+		SendUnicastSector(sendTargetSectors.around[idxSectors], buf, size);
 	}
 
-	if (id == INVALID_CHARACTER_ID)
+	if (includeMe == false)
 	{
-		SectorPos sectorPos;
-		for (int i = 0; i < aroundSectorList.cnt; ++i)
-		{
-			sectorPos = aroundSectorList.around[i];
-			std::map<DWORD, CharacterInfo*>::iterator iter = sectorList[sectorPos.yPos][sectorPos.xPos].begin();
-			for (; iter != sectorList[sectorPos.yPos][sectorPos.xPos].end(); ++iter)
-			{
-				SendUnicast(iter->second->socket, buf, size);
-			}
-		}
-		return;
+		SendUnicastSector(ptrCharac->curPos, buf, size, ptrCharac->characterID);
 	}
-
-	SectorPos sectorPos;
-	for (int i = 0; i < aroundSectorList.cnt; ++i)
+	else 
 	{
-		sectorPos = aroundSectorList.around[i];
-		std::map<DWORD, CharacterInfo*>::iterator iter = sectorList[sectorPos.yPos][sectorPos.xPos].begin();
-		for (; iter != sectorList[sectorPos.yPos][sectorPos.xPos].end(); ++iter)
-		{
-			if (iter->first != id)
-			{
-				SendUnicast(iter->second->socket, buf, size);
-			}
-		}
+		SendUnicastSector(ptrCharac->curPos, buf, size);
 	}
 }
 
-SectorHistory& FindSectorHistory(CharacterInfo* charac)
+void SendToMeOfSectorAroundCharacterInfo(CharacterInfo* ptrCharac)
 {
-	return sectorHistoryList[charac->characterID];
-}
+	SerializationBuffer sendPacket;
+	SectorAround sectors;
+	int idxSectors;
+	CharacterInfo* otherCharac;
 
-bool isChangedSectorPos(CharacterInfo* charac)
-{
-	WORD sectorXpos = charac->xPos / dfSIX_FRAME_X_DISTANCE;
-	WORD sectorYpos = charac->yPos / dfSIX_FRAME_Y_DISTANCE;
+	GetSectorAround(ptrCharac->curPos, &sectors);
 
-	SectorHistory sectorHistory = FindSectorHistory(charac);
-	if (sectorHistory.prevSectorPos.xPos != sectorXpos
-		|| sectorHistory.prevSectorPos.yPos != sectorYpos)
+	for (idxSectors = 0; idxSectors < sectors.cnt; ++idxSectors)
 	{
-		return true;
+		std::map<DWORD, CharacterInfo*>& sector = sectorList[sectors.around[idxSectors].yPos][sectors.around[idxSectors].xPos];
+		std::map<DWORD, CharacterInfo*>::iterator iter = sector.begin();
+		for (; iter != sector.end(); ++iter)
+		{
+			otherCharac = iter->second;
+			MakePacketCreateOtherCharacter(&sendPacket, otherCharac->characterID
+				, otherCharac->stop2Dir, otherCharac->xPos, otherCharac->yPos, otherCharac->hp);
+			SendUnicast(otherCharac->socket, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
+			sendPacket.ClearBuffer();
+		}
 	}
-
-	return false;
-}
-
-void UpdateSectorHistory(CharacterInfo* charac)
-{
-	SectorHistory sectorHistory = FindSectorHistory(charac);
-	sectorHistory.prevSectorPos.xPos = charac->xPos;
-	sectorHistory.prevSectorPos.yPos = charac->yPos;
-}
-
-void UpdateSector(CharacterInfo* charac)
-{
-	if (!isChangedSectorPos(charac))
-	{
-		return;
-	}
-
-	SerializationBuffer packet(20);
-
-	SectorHistory sectorHistory = FindSectorHistory(charac);
-	SectorAround sectorAround;
-	SectorAround deleteSectorAround;
-	SectorPos newSectorPos;
-	switch (charac->action)
-	{
-	case dfPACKET_MOVE_DIR_LL:
-		newSectorPos = ConvertCharcterPosToSectorPos(charac);
-		GetLeftSector(newSectorPos, &sectorAround);
-		if (sectorAround.cnt)
-		{
-			MakePacketCreateOtherCharater(&packet, charac->characterID, charac->stop2Dir, charac->xPos, charac->yPos, charac->hp);
-			MakePacketMoveStart(&packet, charac->characterID, charac->action, charac->xPos, charac->yPos);
-			AddToSector(newSectorPos, charac);
-			SendAroundSector(sectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			packet.ClearBuffer();
-
-			GetRightSector(sectorHistory.prevSectorPos, &deleteSectorAround);
-			MakePacketDeleteCharacter(&packet, charac->characterID);
-			SendAroundSector(deleteSectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			RemoveToSector(sectorHistory.prevSectorPos, charac);
-		}
-		break;
-	case dfPACKET_MOVE_DIR_LU:
-		newSectorPos = ConvertCharcterPosToSectorPos(charac);
-		GetLeftUpSector(newSectorPos, &sectorAround);
-		if (sectorAround.cnt)
-		{
-			MakePacketCreateOtherCharater(&packet, charac->characterID, charac->stop2Dir, charac->xPos, charac->yPos, charac->hp);
-			MakePacketMoveStart(&packet, charac->characterID, charac->action, charac->xPos, charac->yPos);
-			AddToSector(newSectorPos, charac);
-			SendAroundSector(sectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			packet.ClearBuffer();
-
-			GetRightDownSector(sectorHistory.prevSectorPos, &deleteSectorAround);
-			MakePacketDeleteCharacter(&packet, charac->characterID);
-			SendAroundSector(deleteSectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			RemoveToSector(sectorHistory.prevSectorPos, charac);
-		}
-		break;
-	case dfPACKET_MOVE_DIR_UU:
-		newSectorPos = ConvertCharcterPosToSectorPos(charac);
-		GetUpSector(newSectorPos, &sectorAround);
-		if (sectorAround.cnt)
-		{
-			MakePacketCreateOtherCharater(&packet, charac->characterID, charac->stop2Dir, charac->xPos, charac->yPos, charac->hp);
-			MakePacketMoveStart(&packet, charac->characterID, charac->action, charac->xPos, charac->yPos);
-			AddToSector(newSectorPos, charac);
-			SendAroundSector(sectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			packet.ClearBuffer();
-
-			GetDownSector(sectorHistory.prevSectorPos, &deleteSectorAround);
-			MakePacketDeleteCharacter(&packet, charac->characterID);
-			SendAroundSector(deleteSectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			RemoveToSector(sectorHistory.prevSectorPos, charac);
-		}
-		break;
-	case dfPACKET_MOVE_DIR_RU:
-		newSectorPos = ConvertCharcterPosToSectorPos(charac);
-		GetRightUpSector(newSectorPos, &sectorAround);
-		if (sectorAround.cnt)
-		{
-			MakePacketCreateOtherCharater(&packet, charac->characterID, charac->stop2Dir, charac->xPos, charac->yPos, charac->hp);
-			MakePacketMoveStart(&packet, charac->characterID, charac->action, charac->xPos, charac->yPos);
-			AddToSector(newSectorPos, charac);
-			SendAroundSector(sectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			packet.ClearBuffer();
-
-			GetLeftDownSector(sectorHistory.prevSectorPos, &deleteSectorAround);
-			MakePacketDeleteCharacter(&packet, charac->characterID);
-			SendAroundSector(deleteSectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			RemoveToSector(sectorHistory.prevSectorPos, charac);
-		}
-		break;
-	case dfPACKET_MOVE_DIR_RR:
-		newSectorPos = ConvertCharcterPosToSectorPos(charac);
-		GetRightSector(newSectorPos, &sectorAround);
-		if (sectorAround.cnt)
-		{
-			MakePacketCreateOtherCharater(&packet, charac->characterID, charac->stop2Dir, charac->xPos, charac->yPos, charac->hp);
-			MakePacketMoveStart(&packet, charac->characterID, charac->action, charac->xPos, charac->yPos);
-			AddToSector(newSectorPos, charac);
-			SendAroundSector(sectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			packet.ClearBuffer();
-
-			GetLeftSector(sectorHistory.prevSectorPos, &deleteSectorAround);
-			MakePacketDeleteCharacter(&packet, charac->characterID);
-			SendAroundSector(deleteSectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			RemoveToSector(sectorHistory.prevSectorPos, charac);
-		}
-		break;
-	case dfPACKET_MOVE_DIR_RD:
-		newSectorPos = ConvertCharcterPosToSectorPos(charac);
-		GetRightDownSector(newSectorPos, &sectorAround);
-		if (sectorAround.cnt)
-		{
-			MakePacketCreateOtherCharater(&packet, charac->characterID, charac->stop2Dir, charac->xPos, charac->yPos, charac->hp);
-			MakePacketMoveStart(&packet, charac->characterID, charac->action, charac->xPos, charac->yPos);
-			AddToSector(newSectorPos, charac);
-			SendAroundSector(sectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			packet.ClearBuffer();
-
-			GetLeftUpSector(sectorHistory.prevSectorPos, &deleteSectorAround);
-			MakePacketDeleteCharacter(&packet, charac->characterID);
-			SendAroundSector(deleteSectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			RemoveToSector(sectorHistory.prevSectorPos, charac);
-		}
-		break;
-	case dfPACKET_MOVE_DIR_DD:
-		newSectorPos = ConvertCharcterPosToSectorPos(charac);
-		GetDownSector(newSectorPos, &sectorAround);
-		if (sectorAround.cnt)
-		{
-			MakePacketCreateOtherCharater(&packet, charac->characterID, charac->stop2Dir, charac->xPos, charac->yPos, charac->hp);
-			MakePacketMoveStart(&packet, charac->characterID, charac->action, charac->xPos, charac->yPos);
-			AddToSector(newSectorPos, charac);
-			SendAroundSector(sectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			packet.ClearBuffer();
-
-			GetUpSector(sectorHistory.prevSectorPos, &deleteSectorAround);
-			MakePacketDeleteCharacter(&packet, charac->characterID);
-			SendAroundSector(deleteSectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			RemoveToSector(sectorHistory.prevSectorPos, charac);
-		}
-		break;
-	case dfPACKET_MOVE_DIR_LD:
-		newSectorPos = ConvertCharcterPosToSectorPos(charac);
-		GetLeftDownSector(newSectorPos, &sectorAround);
-		if (sectorAround.cnt)
-		{
-			MakePacketCreateOtherCharater(&packet, charac->characterID, charac->stop2Dir, charac->xPos, charac->yPos, charac->hp);
-			MakePacketMoveStart(&packet, charac->characterID, charac->action, charac->xPos, charac->yPos);
-			AddToSector(newSectorPos, charac);
-			SendAroundSector(sectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			packet.ClearBuffer();
-
-			GetRightUpSector(sectorHistory.prevSectorPos, &deleteSectorAround);
-			MakePacketDeleteCharacter(&packet, charac->characterID);
-			SendAroundSector(deleteSectorAround, packet.GetFrontBufferPtr(), packet.GetUseSize(), charac->characterID);
-			RemoveToSector(sectorHistory.prevSectorPos, charac);
-		}
-		break;
-	}
-
-	UpdateSectorHistory(charac);
 }

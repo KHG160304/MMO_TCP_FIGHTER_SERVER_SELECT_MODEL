@@ -3,10 +3,9 @@
 #define	__SECTOR_H__
 #include "GameContentValueSetting.h"
 #include <map>
-#include "CharacterInfo.h"
 
-#define dfSIX_FRAME_X_DISTANCE	(dfSPEED_PLAYER_X * 6)
-#define dfSIX_FRAME_Y_DISTANCE	(dfSPEED_PLAYER_Y * 6)
+#define dfSIX_FRAME_X_DISTANCE	(dfSPEED_PLAYER_X * 10)
+#define dfSIX_FRAME_Y_DISTANCE	(dfSPEED_PLAYER_Y * 10)
 #define dfSECTOR_WIDTH		(dfRANGE_MOVE_RIGHT / dfSIX_FRAME_X_DISTANCE) + 1
 #define dfSECTOR_HEIGHT		(dfRANGE_MOVE_BOTTOM / dfSIX_FRAME_Y_DISTANCE) + 1
 #define	USER_VISIBLE_SECTOR_WIDTH	3;
@@ -14,7 +13,11 @@
 
 #define INVALID_CHARACTER_ID  (DWORD)(~0)
 
-struct SectorPos
+struct CharacterInfo;
+
+typedef unsigned short WORD;
+
+struct SectorPos                   
 {
 	WORD xPos;
 	WORD yPos;
@@ -26,36 +29,19 @@ struct SectorAround
 	SectorPos around[9];
 };
 
-struct SectorHistory
-{
-	SectorPos prevSectorPos;
-};
+size_t GetSectorCharacterCnt(void);
 
-void GetAroundSector(CharacterInfo* charac, SectorAround* outSectorAround);
+SectorPos ConvertWorldPosToSectorPos(WORD worldXPos, WORD worldYPos);
 
-void GetLeftUpSector(SectorPos pos, SectorAround* outSectorAround);
+void Sector_AddCharacter(CharacterInfo* charac);
+void Sector_RemoveCharacter(CharacterInfo* charac);
+bool Sector_UpdateCharacter(CharacterInfo* charac);
 
-void GetLeftDownSector(SectorPos pos, SectorAround* outSectorAround);
+void SendUnicastSector(SectorPos target, const char* buf, int size, DWORD excludeCharacterID = INVALID_CHARACTER_ID);
+void SendSectorAround(CharacterInfo* ptrCharac, const char* buf, int size, bool includeMe = false);
 
-void GetRightUpSector(SectorPos pos, SectorAround* outSectorAround);
+void GetSectorAround(SectorPos findPos, SectorAround* pSectorAround, bool includeFindSector = true);
+void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac);
 
-void GetRightDownSector(SectorPos pos, SectorAround* outSectorAround);
-
-void GetLeftSector(SectorPos pos, SectorAround* outSectorAround);
-
-void GetRightSector(SectorPos pos, SectorAround* outSectorAround);
-
-void GetUpSector(SectorPos pos, SectorAround* outSectorAround);
-
-void GetDownSector(SectorPos pos, SectorAround* outSectorAround);
-
-void AddToSector(CharacterInfo* charac);
-
-void RemoveToSector(CharacterInfo* charac);
-
-void SendAroundSector(CharacterInfo* charac, const char* buf, int size, bool excludeMe = true);
-
-void SendAroundSector(const SectorAround& aroundSectorList, const char* buf, int size, DWORD id = INVALID_CHARACTER_ID);
-
-void UpdateSector(CharacterInfo* charac);
+void SendToMeOfSectorAroundCharacterInfo(CharacterInfo* ptrCharac);
 #endif // !__SECTOR_H__

@@ -31,9 +31,9 @@ void MakePacketEcho(SerializationBuffer* packetBuf, DWORD time);
 
 void MakePacketSyncXYPos(SerializationBuffer* packetBuf, DWORD id, WORD xPos, WORD yPos);
 
-void MakePacketCreateMyCharater(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp);
+void MakePacketCreateMyCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp);
 
-void MakePacketCreateOtherCharater(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp);
+void MakePacketCreateOtherCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp);
 
 void MakePacketDeleteCharacter(SerializationBuffer* packetBuf, DWORD id);
 

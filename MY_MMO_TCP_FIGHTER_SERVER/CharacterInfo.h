@@ -2,6 +2,7 @@
 #ifndef __CHARACTERINFO_H__
 #define __CHARACTERINFO_H__
 
+#include "Sector.h"
 #include <winsock2.h>
 
 struct CharacterInfo
@@ -17,6 +18,9 @@ struct CharacterInfo
 	BYTE	move8Dir;
 	BYTE	action;
 	char	hp;
+
+	SectorPos curPos;
+	SectorPos oldPos;
 };
 
 #endif // !__CHARACTERINFO_H__
