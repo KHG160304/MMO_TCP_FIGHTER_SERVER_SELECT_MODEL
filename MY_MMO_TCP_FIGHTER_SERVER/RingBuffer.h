@@ -25,11 +25,8 @@ public:
 private:
 	char* __internalBuffer;
 	int __capacity;
-	int __useSize;
-	int __freeSize;
 	int __queueFrontIndex;
 	int __queueRearIndex;
 };
 
 #endif // !__RING_BUFFER_H__
-	
