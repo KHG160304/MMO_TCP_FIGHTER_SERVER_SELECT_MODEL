@@ -44,4 +44,6 @@ void GetSectorAround(SectorPos findPos, SectorAround* pSectorAround, bool includ
 void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac);
 
 void SendToMeOfSectorAroundCharacterInfo(CharacterInfo* ptrCharac);
+
+bool SearchCollision(int attackXRange, int attackYRange, const CharacterInfo* characterOnAttack, CharacterInfo** outCharacterIDOnDamage);
 #endif // !__SECTOR_H__

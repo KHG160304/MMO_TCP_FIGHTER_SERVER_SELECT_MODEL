@@ -1,4 +1,4 @@
-#include "Log.h"
+ï»¿#include "Log.h"
 #include "Sector.h"
 #include "CharacterInfo.h"
 #include "Network.h"
@@ -43,8 +43,9 @@ bool Sector_UpdateCharacter(CharacterInfo* charac)
 		return false;
 	}
 
-	charac->oldPos.yPos = charac->curPos.yPos;
-	charac->oldPos.xPos = charac->curPos.xPos;
+	//charac->oldPos.yPos = charac->curPos.yPos;
+	//charac->oldPos.xPos = charac->curPos.xPos;
+	charac->oldPos = charac->curPos;
 	Sector_RemoveCharacter(charac);
 
 	charac->curPos = curPos;
@@ -192,8 +193,8 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 	GetUpdateSectorAround(ptrCharac, &removeSectors, &addSectors);
 
 	/*
-		removeSectors¿¡ Á¸ÀçÇÏ´Â Ä³¸¯ÅÍµé¿¡°Ô,
-		ptrCharacÀÇ Á¤º¸¸¦ È­¸é¿¡¼­ Áö¿ì¶ó°í ÇÔ
+		removeSectorsì— ì¡´ìž¬í•˜ëŠ” ìºë¦­í„°ë“¤ì—ê²Œ,
+		ptrCharacì˜ ì •ë³´ë¥¼ í™”ë©´ì—ì„œ ì§€ìš°ë¼ê³  í•¨
 	*/
 	MakePacketDeleteCharacter(&packetBuf, ptrCharac->characterID);
 	for (idxRemoveSectors = 0; idxRemoveSectors < removeSectors.cnt; ++idxRemoveSectors)
@@ -202,8 +203,8 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 	}
 	
 	/*
-		ptrCharac¿¡°³ Á¸ÀçÇÏ´Â Ä³¸¯ÅÍµé¿¡°Ô,
-		removeSectorsÀÇ Á¤º¸¸¦ È­¸é¿¡¼­ Áö¿ì¶ó°í ÇÔ
+		ptrCharacì—ê°œ ì¡´ìž¬í•˜ëŠ” ìºë¦­í„°ë“¤ì—ê²Œ,
+		removeSectorsì˜ ì •ë³´ë¥¼ í™”ë©´ì—ì„œ ì§€ìš°ë¼ê³  í•¨
 	*/
 	for (idxRemoveSectors = 0; idxRemoveSectors < removeSectors.cnt; ++idxRemoveSectors)
 	{
@@ -223,12 +224,14 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 	}
 
 	/*
-		ÀÌµ¿ Áß »õ·Î º¸ÀÌ´Â ½Ã¾ß¿¡ Á¸ÀçÇÏ´Â Ä³¸¯ÅÍµé¿¡°Ô
-		ÀÌµ¿ ÇÏ´Â Ä³¸¯ÅÍÀÇ Á¤º¸¸¦ Àü¼Û;
+		ì´ë™ ì¤‘ ìƒˆë¡œ ë³´ì´ëŠ” ì‹œì•¼ì— ì¡´ìž¬í•˜ëŠ” ìºë¦­í„°ë“¤ì—ê²Œ
+		ì´ë™ í•˜ëŠ” ìºë¦­í„°ì˜ ì •ë³´ë¥¼ ì „ì†¡;
 	*/
 	packetBuf.ClearBuffer();
-	MakePacketCreateOtherCharacter(&packetBuf, ptrCharac->characterID
-		, ptrCharac->stop2Dir, ptrCharac->xPos, ptrCharac->yPos, ptrCharac->hp);
+
+	//MakePacketCreateOtherCharacter(&packetBuf, ptrCharac->characterID
+	//	, ptrCharac->stop2Dir, ptrCharac->xPos, ptrCharac->yPos, ptrCharac->hp);
+	MakePacketCreateOtherCharacter(&packetBuf, ptrCharac);
 	MakePacketMoveStart(&packetBuf, ptrCharac->characterID, ptrCharac->move8Dir, ptrCharac->xPos, ptrCharac->yPos);
 	for (idxAddSectors = 0; idxAddSectors < addSectors.cnt; ++idxAddSectors)
 	{
@@ -236,8 +239,8 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 	}
 
 	/*
-		»õ·Î º¸ÀÌ´Â ½Ã¾ß¿¡ ÀÖ´Â Ä³¸¯ÅÍ µéÀÇ Á¤º¸¸¦ ³»°Ô °¡Á®¿Â´Ù.
-		ÀÌµ¿ ÇÏ´Â Ä³¸¯ÅÍÀÇ Á¤º¸¸¦ Àü¼Û;
+		ìƒˆë¡œ ë³´ì´ëŠ” ì‹œì•¼ì— ìžˆëŠ” ìºë¦­í„° ë“¤ì˜ ì •ë³´ë¥¼ ë‚´ê²Œ ê°€ì ¸ì˜¨ë‹¤.
+		ì´ë™ í•˜ëŠ” ìºë¦­í„°ì˜ ì •ë³´ë¥¼ ì „ì†¡;
 	*/
 	for (idxAddSectors = 0; idxAddSectors < addSectors.cnt; ++idxAddSectors)
 	{
@@ -252,9 +255,11 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 			}
 			packetBuf.ClearBuffer();
 
+			
 			addSecterCharac = iter->second;
-			MakePacketCreateOtherCharacter(&packetBuf, addSecterCharac->characterID
-				, addSecterCharac->stop2Dir, addSecterCharac->xPos, addSecterCharac->yPos, addSecterCharac->hp);			
+			MakePacketCreateOtherCharacter(&packetBuf, addSecterCharac);
+			//MakePacketCreateOtherCharacter(&packetBuf, addSecterCharac->characterID
+			//	, addSecterCharac->stop2Dir, addSecterCharac->xPos, addSecterCharac->yPos, addSecterCharac->hp);
 
 			switch (addSecterCharac->action)
 			{
@@ -322,7 +327,7 @@ void SendToMeOfSectorAroundCharacterInfo(CharacterInfo* ptrCharac)
 	SerializationBuffer sendPacket;
 	SectorAround sectors;
 	int idxSectors;
-	CharacterInfo* otherCharac;
+	//CharacterInfo* otherCharac;
 
 	GetSectorAround(ptrCharac->curPos, &sectors);
 
@@ -332,11 +337,302 @@ void SendToMeOfSectorAroundCharacterInfo(CharacterInfo* ptrCharac)
 		std::map<DWORD, CharacterInfo*>::iterator iter = sector.begin();
 		for (; iter != sector.end(); ++iter)
 		{
-			otherCharac = iter->second;
-			MakePacketCreateOtherCharacter(&sendPacket, otherCharac->characterID
-				, otherCharac->stop2Dir, otherCharac->xPos, otherCharac->yPos, otherCharac->hp);
-			SendUnicast(otherCharac->socket, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
+			//otherCharac = iter->second;
+			MakePacketCreateOtherCharacter(&sendPacket, iter->second);
+			/*MakePacketCreateOtherCharacter(&sendPacket, otherCharac->characterID
+				, otherCharac->stop2Dir, otherCharac->xPos, otherCharac->yPos, otherCharac->hp);*/
+			SendUnicast(ptrCharac->socket, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 			sendPacket.ClearBuffer();
 		}
 	}
+}
+
+bool SearchCollision(int attackXRange, int attackYRange, const CharacterInfo* characterOnAttack, CharacterInfo** outCharacterIDOnDamage)
+{
+	CharacterInfo* charac;
+	SectorPos posOnAttacker = characterOnAttack->curPos;
+	int attackerXPos = characterOnAttack->xPos;
+	int attackerYPos = characterOnAttack->yPos;
+	//int attackerXPosPlusDir;
+
+	int tmpDistanceX;
+	int tmpDistanceY;
+	int minDistanceX = attackXRange;
+	int minDistanceY = attackYRange;
+
+	int tmpX;
+	int cnt;
+	CharacterInfo* targetCharacter = nullptr;
+
+	/*if (characterOnAttack->stop2Dir == dfPACKET_MOVE_DIR_LL)
+	{
+		attackerXPosPlusDir = attackerXPos;
+	}
+	else if (characterOnAttack->stop2Dir == dfPACKET_MOVE_DIR_RR)
+	{
+		attackerXPosPlusDir = attackerXPos * -1;
+	}
+	else
+	{
+		return false;
+	}
+
+	for (tmpX = posOnAttacker.xPos, cnt = 2; targetCharacter == nullptr && tmpX > -1 && cnt != 0; --tmpX, --cnt)
+	{
+		std::map<DWORD, CharacterInfo*> characterList = sectorList[posOnAttacker.yPos][tmpX];
+		std::map<DWORD, CharacterInfo*>::iterator iter = characterList.begin();
+		for (; iter != characterList.end(); ++iter)
+		{
+			charac = iter->second;
+			if (charac->characterID == characterOnAttack->characterID)
+			{
+				continue;
+			}
+			tmpDistanceX = attackerXPosPlusDir - charac->xPos;
+			tmpDistanceY = abs(charac->yPos - attackerYPos);
+
+			if ((tmpDistanceX >= 0 && tmpDistanceX <= attackXRange) && tmpDistanceY <= attackYRange)
+			{
+				if ((tmpDistanceX < minDistanceX)
+					|| (tmpDistanceX == minDistanceX && tmpDistanceY < minDistanceY))
+				{
+					minDistanceX = tmpDistanceX;
+					minDistanceY = tmpDistanceY;
+					targetCharacter = charac;
+				}
+			}
+		}
+
+		if (targetCharacter != nullptr)
+		{
+			*outCharacterIDOnDamage = targetCharacter;
+			return true;
+		}
+	}
+
+	int tmpYUp = ((attackerYPos - attackYRange) / dfSIX_FRAME_Y_DISTANCE);
+	int tmpYDown = ((attackerYPos + attackYRange) / dfSIX_FRAME_Y_DISTANCE);
+	int searchEndY = -1;
+
+	if (tmpYUp > -1 && tmpYUp == posOnAttacker.yPos - 1)
+	{
+		searchEndY = tmpYUp;
+	}
+	else if (tmpYDown < dfSECTOR_HEIGHT&& tmpYDown == posOnAttacker.yPos + 1)
+	{
+		searchEndY = tmpYDown;
+	}
+
+	if (searchEndY != -1)
+	{
+		for (tmpX = posOnAttacker.xPos, cnt = 2; targetCharacter == nullptr && tmpX > -1 && cnt != 0; --tmpX, --cnt)
+		{
+			std::map<DWORD, CharacterInfo*> characterList = sectorList[searchEndY][tmpX];
+			std::map<DWORD, CharacterInfo*>::iterator iter = characterList.begin();
+			for (; iter != characterList.end(); ++iter)
+			{
+				charac = iter->second;
+				if (charac->characterID == characterOnAttack->characterID)
+				{
+					continue;
+				}
+				tmpDistanceX = attackerXPos - charac->xPos;
+				tmpDistanceY = abs(charac->yPos - attackerYPos);
+
+				if ((tmpDistanceX >= 0 && tmpDistanceX <= attackXRange) && tmpDistanceY <= attackYRange)
+				{
+					if ((tmpDistanceX < minDistanceX)
+						|| (tmpDistanceX == minDistanceX && tmpDistanceY < minDistanceY))
+					{
+						minDistanceX = tmpDistanceX;
+						minDistanceY = tmpDistanceY;
+						targetCharacter = charac;
+					}
+				}
+			}
+
+			if (targetCharacter != nullptr)
+			{
+				*outCharacterIDOnDamage = targetCharacter;
+				return true;
+			}
+		}
+	}
+
+	return false;*/
+
+	if (characterOnAttack->stop2Dir == dfPACKET_MOVE_DIR_LL)
+	{
+		for (tmpX = posOnAttacker.xPos, cnt = 2; targetCharacter == nullptr && tmpX > -1 && cnt != 0; --tmpX, --cnt)
+		{
+			std::map<DWORD, CharacterInfo*> characterList = sectorList[posOnAttacker.yPos][tmpX];
+			std::map<DWORD, CharacterInfo*>::iterator iter = characterList.begin();
+			for (; iter != characterList.end(); ++iter)
+			{
+				charac = iter->second;
+				if (charac->characterID == characterOnAttack->characterID)
+				{
+					continue;
+				}
+				tmpDistanceX = attackerXPos - charac->xPos;
+				tmpDistanceY = abs(charac->yPos - attackerYPos);
+
+				if ((tmpDistanceX >= 0 && tmpDistanceX <= attackXRange) && tmpDistanceY <= attackYRange)
+				{
+					if ((tmpDistanceX < minDistanceX)
+						|| (tmpDistanceX == minDistanceX && tmpDistanceY < minDistanceY))
+					{
+						minDistanceX = tmpDistanceX;
+						minDistanceY = tmpDistanceY;
+						targetCharacter = charac;
+					}
+				}
+			}
+
+			if (targetCharacter != nullptr)
+			{
+				*outCharacterIDOnDamage = targetCharacter;
+				return true;
+			}
+		}
+
+		int tmpYUp = ((attackerYPos - attackYRange) / dfSIX_FRAME_Y_DISTANCE);
+		int tmpYDown = ((attackerYPos + attackYRange) / dfSIX_FRAME_Y_DISTANCE);
+		int searchEndY = -1;
+
+		if (tmpYUp > -1 && tmpYUp == posOnAttacker.yPos - 1)
+		{
+			searchEndY = tmpYUp;
+		}
+		else if (tmpYDown < dfSECTOR_HEIGHT && tmpYDown == posOnAttacker.yPos + 1)
+		{
+			searchEndY = tmpYDown;
+		}
+
+		if (searchEndY != -1)
+		{
+			for (tmpX = posOnAttacker.xPos, cnt = 2; targetCharacter == nullptr && tmpX > -1 && cnt != 0; --tmpX, --cnt)
+			{
+				std::map<DWORD, CharacterInfo*> characterList = sectorList[searchEndY][tmpX];
+				std::map<DWORD, CharacterInfo*>::iterator iter = characterList.begin();
+				for (; iter != characterList.end(); ++iter)
+				{
+					charac = iter->second;
+					if (charac->characterID == characterOnAttack->characterID)
+					{
+						continue;
+					}
+					tmpDistanceX = attackerXPos - charac->xPos;
+					tmpDistanceY = abs(charac->yPos - attackerYPos);
+
+					if ((tmpDistanceX >= 0 && tmpDistanceX <= attackXRange) && tmpDistanceY <= attackYRange)
+					{
+						if ((tmpDistanceX < minDistanceX)
+							|| (tmpDistanceX == minDistanceX && tmpDistanceY < minDistanceY))
+						{
+							minDistanceX = tmpDistanceX;
+							minDistanceY = tmpDistanceY;
+							targetCharacter = charac;
+						}
+					}
+				}
+
+				if (targetCharacter != nullptr)
+				{
+					*outCharacterIDOnDamage = targetCharacter;
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+	else if (characterOnAttack->stop2Dir == dfPACKET_MOVE_DIR_RR)
+	{
+		for (tmpX = posOnAttacker.xPos, cnt = 2; tmpX < dfSECTOR_WIDTH && cnt != 0; ++tmpX, --cnt)
+		{
+			std::map<DWORD, CharacterInfo*> characterList = sectorList[posOnAttacker.yPos][tmpX];
+			std::map<DWORD, CharacterInfo*>::iterator iter = characterList.begin();
+			for (; iter != characterList.end(); ++iter)
+			{
+				charac = iter->second;
+				if (charac->characterID == characterOnAttack->characterID)
+				{
+					continue;
+				}
+				tmpDistanceX = charac->xPos - attackerXPos;
+				tmpDistanceY = abs(charac->yPos - attackerYPos);
+
+				if ((tmpDistanceX >= 0 && tmpDistanceX <= attackXRange) && tmpDistanceY <= attackYRange)
+				{
+					if ((tmpDistanceX < minDistanceX)
+						|| (tmpDistanceX == minDistanceX && tmpDistanceY < minDistanceY))
+					{
+						minDistanceX = tmpDistanceX;
+						minDistanceY = tmpDistanceY;
+						targetCharacter = charac;
+					}
+				}
+			}
+
+			if (targetCharacter != nullptr)
+			{
+				*outCharacterIDOnDamage = targetCharacter;
+				return true;
+			}
+		}
+
+		int tmpYUp = ((attackerYPos - attackYRange) / dfSIX_FRAME_Y_DISTANCE);
+		int tmpYDown = ((attackerYPos + attackYRange) / dfSIX_FRAME_Y_DISTANCE);
+		int searchEndY = -1;
+
+		if (tmpYUp > -1 && tmpYUp == posOnAttacker.yPos - 1)
+		{
+			searchEndY = tmpYUp;
+		}
+		else if (tmpYDown < dfSECTOR_HEIGHT&& tmpYDown == posOnAttacker.yPos + 1)
+		{
+			searchEndY = tmpYDown;
+		}
+
+		if (searchEndY != -1)
+		{
+			for (tmpX = posOnAttacker.xPos, cnt = 2; tmpX < dfSECTOR_WIDTH && cnt != 0; ++tmpX, --cnt)
+			{
+				std::map<DWORD, CharacterInfo*> characterList = sectorList[searchEndY][tmpX];
+				std::map<DWORD, CharacterInfo*>::iterator iter = characterList.begin();
+				for (; iter != characterList.end(); ++iter)
+				{
+					charac = iter->second;
+					if (charac->characterID == characterOnAttack->characterID)
+					{
+						continue;
+					}
+					tmpDistanceX = charac->xPos - attackerXPos;
+					tmpDistanceY = abs(charac->yPos - attackerYPos);
+
+					if ((tmpDistanceX >= 0 && tmpDistanceX <= attackXRange) && tmpDistanceY <= attackYRange)
+					{
+						if ((tmpDistanceX < minDistanceX)
+							|| (tmpDistanceX == minDistanceX && tmpDistanceY < minDistanceY))
+						{
+							minDistanceX = tmpDistanceX;
+							minDistanceY = tmpDistanceY;
+							targetCharacter = charac;
+						}
+					}
+				}
+
+				if (targetCharacter != nullptr)
+				{
+					*outCharacterIDOnDamage = targetCharacter;
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	return false;
 }
