@@ -1,5 +1,6 @@
-#include "Log.h"
+ï»¿#include "Log.h"
 #include "Network.h"
+//#include "ProcessContentsPacket.h"
 #include "SerializationBuffer.h"
 #include <WS2tcpip.h>
 #include <map>
@@ -28,8 +29,8 @@ static char* bufPacketHeader;
 
 static void (*ProcessContentsAcceptEvent)(void* param) = nullptr;
 static void (*ProcessContentsDisconnectSessionEvent)(void* param) = nullptr;
-static bool (*CheckIfCompletedPacket)(char* bufPacketHeader, int allRecivedPacketSize, int* outPacketBodySize) = nullptr;
-static bool (*DispatchPacketToContents)(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* recvPacket) = nullptr;
+static bool (*CheckIfCompletedPacketHandler)(char* bufPacketHeader, int allRecivedPacketSize, int* outPacketBodySize) = nullptr;
+static bool (*DispatchPacketToContentsHandler)(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* recvPacket) = nullptr;
 
 bool InitNetwork(void)
 {
@@ -37,27 +38,27 @@ bool InitNetwork(void)
 
 	if (ProcessContentsAcceptEvent == nullptr || ProcessContentsDisconnectSessionEvent == nullptr)
 	{
-		_Log(dfLOG_LEVEL_ERROR, "ÄÁÅÙÃ÷ÀÇ ACCEPT ¶Ç´Â DISCONNECT EVENT nullptr ÃÊ±âÈ­");
+		_Log(dfLOG_LEVEL_ERROR, "ì»¨í…ì¸ ì˜ ACCEPT ë˜ëŠ” DISCONNECT EVENT nullptr ì´ˆê¸°í™”");
 		return false;
 	}
 
 	if (packetHeaderSize == -1)
 	{
-		_Log(dfLOG_LEVEL_ERROR, "ÄÁÅÙÃ÷ ÆÐÅ¶ÀÇ °øÅëÇì´õ Å©±â ¼³Á¤ ÃÊ±âÈ­ ½ÇÆÐ");
+		_Log(dfLOG_LEVEL_ERROR, "ì»¨í…ì¸  íŒ¨í‚·ì˜ ê³µí†µí—¤ë” í¬ê¸° ì„¤ì • ì´ˆê¸°í™” ì‹¤íŒ¨");
 		return false;
 	}
 
 	WSAData wsaData;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 	{
-		_Log(dfLOG_LEVEL_ERROR, "À©¼Ó ÃÊ±âÈ­ ½ÇÆÐ: %d", WSAGetLastError());
+		_Log(dfLOG_LEVEL_ERROR, "ìœˆì† ì´ˆê¸°í™” ì‹¤íŒ¨: %d", WSAGetLastError());
 		return false;
 	}
 
 	gListenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (gListenSocket == INVALID_SOCKET)
 	{
-		_Log(dfLOG_LEVEL_ERROR, "¸®½¼ ¼ÒÄÏ »ý¼º ½ÇÆÐ: %d", WSAGetLastError());
+		_Log(dfLOG_LEVEL_ERROR, "ë¦¬ìŠ¨ ì†Œì¼“ ìƒì„± ì‹¤íŒ¨: %d", WSAGetLastError());
 		return false;
 	}
 
@@ -66,13 +67,13 @@ bool InitNetwork(void)
 	gServerSockAddr.sin_addr.s_addr = INADDR_ANY;
 	if (bind(gListenSocket, (SOCKADDR*)&gServerSockAddr, sizeof(gServerSockAddr)) == SOCKET_ERROR)
 	{
-		_Log(dfLOG_LEVEL_ERROR, "¸®½¼ ¼ÒÄÏ ¹ÙÀÎµù ½ÇÆÐ: %d", WSAGetLastError());
+		_Log(dfLOG_LEVEL_ERROR, "ë¦¬ìŠ¨ ì†Œì¼“ ë°”ì¸ë”© ì‹¤íŒ¨: %d", WSAGetLastError());
 		return false;
 	}
 
 	if (listen(gListenSocket, SOMAXCONN) == SOCKET_ERROR)
 	{
-		_Log(dfLOG_LEVEL_ERROR, "¸®½¼ ¼ÒÄÏ ¸®½º´× ½ÇÆÐ: %d", WSAGetLastError());
+		_Log(dfLOG_LEVEL_ERROR, "ë¦¬ìŠ¨ ì†Œì¼“ ë¦¬ìŠ¤ë‹ ì‹¤íŒ¨: %d", WSAGetLastError());
 		return false;
 	}
 
@@ -81,13 +82,13 @@ bool InitNetwork(void)
 	optLinger.l_linger = 0;
 	if (setsockopt(gListenSocket, SOL_SOCKET, SO_LINGER, (char*)&optLinger, sizeof(optLinger)) != 0)
 	{
-		_Log(dfLOG_LEVEL_ERROR, "¸®½¼ ¼ÒÄÏ LINGER OPTION ½ÇÆÐ: %d", WSAGetLastError());
+		_Log(dfLOG_LEVEL_ERROR, "ë¦¬ìŠ¨ ì†Œì¼“ LINGER OPTION ì‹¤íŒ¨: %d", WSAGetLastError());
 		return false;
 	}
 
 	WCHAR wstrServerIp[16];
-	_Log(dfLOG_LEVEL_SYSTEM, "¼­¹ö Á¢¼ÓÁ¤º¸: %s/%d", InetNtop(AF_INET, &gServerSockAddr.sin_addr, wstrServerIp, 16), SERVERPORT);
-	_Log(dfLOG_LEVEL_SYSTEM, "¼­¹ö ÃÊ±âÈ­ ¹× ½ÃÀÛ ¼º°ø");
+	_Log(dfLOG_LEVEL_SYSTEM, "ì„œë²„ ì ‘ì†ì •ë³´: %s/%d", InetNtop(AF_INET, &gServerSockAddr.sin_addr, wstrServerIp, 16), SERVERPORT);
+	_Log(dfLOG_LEVEL_SYSTEM, "ì„œë²„ ì´ˆê¸°í™” ë° ì‹œìž‘ ì„±ê³µ");
 	return true;
 }
 
@@ -186,19 +187,19 @@ void ProcessAcceptNetworkEvent(void)
 	SOCKET clientSock = accept(gListenSocket, (SOCKADDR*)&clientAddr, &addrlen);
 	if (clientSock == INVALID_SOCKET)
 	{
-		_Log(dfLOG_LEVEL_ERROR, "Å¬¶óÀÌ¾ðÆ® ¼ÒÄÏ »ý¼º ½ÇÆÐ: %d", WSAGetLastError());
+		_Log(dfLOG_LEVEL_ERROR, "í´ë¼ì´ì–¸íŠ¸ ì†Œì¼“ ìƒì„± ì‹¤íŒ¨: %d", WSAGetLastError());
 		return;
 	}
 
 	if (sessionList.size() > MAX_CON_SESSION)
 	{
-		_Log(dfLOG_LEVEL_ERROR, "ÃÖ´ë Á¢¼Ó°¡´É ¼¼¼Ç ÃÊ°ú(%d)", MAX_CON_SESSION);
+		_Log(dfLOG_LEVEL_ERROR, "ìµœëŒ€ ì ‘ì†ê°€ëŠ¥ ì„¸ì…˜ ì´ˆê³¼(%d)", MAX_CON_SESSION);
 		return;
 	}
 
 	WCHAR wstrClientIp[16];
 	Session* newSession = CreateSession(clientSock, &clientAddr);
-	_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] Å¬¶óÀÌ¾ðÆ® Á¢¼Ó"
+	_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] í´ë¼ì´ì–¸íŠ¸ ì ‘ì†"
 		, InetNtop(AF_INET, &clientAddr.sin_addr, wstrClientIp, 16)
 		, ntohs(clientAddr.sin_port));
 
@@ -207,45 +208,38 @@ void ProcessAcceptNetworkEvent(void)
 
 bool ProcessRecvNetworkEvent(SOCKET socket)
 {
-	Session* ptrSession = FindSession(socket);
+	//Session* ptrSession = FindSession(socket);
+	Session* ptrSession = sessionList[socket];
 	RingBuffer* ptrRecvQueue = &ptrSession->recvQueue;
 	int receivedSize = recv(socket, ptrRecvQueue->GetRearBufferPtr(), ptrRecvQueue->GetDirectEnqueueSize(), 0);
 	if (receivedSize == SOCKET_ERROR)
 	{
-		_Log(dfLOG_LEVEL_DEBUG, "[¼ÒÄÏID: %lld] RECV ERROR ¹ß»ý(CODE: %d)", socket, WSAGetLastError());
+		//_Log(dfLOG_LEVEL_DEBUG, "[ì†Œì¼“ID: %lld] RECV ERROR ë°œìƒ(CODE: %d)", socket, WSAGetLastError());
 		DisconnectSession(socket);
 		return false;
 	}
 	else if (receivedSize == 0)
 	{
-		_Log(dfLOG_LEVEL_DEBUG, "[¼ÒÄÏID: %lld] RECV Å¬¶óÀÌ¾ðÆ® FIN ¼ö½ÅÈ®ÀÎ", socket);
+		//_Log(dfLOG_LEVEL_DEBUG, "[ì†Œì¼“ID: %lld] RECV í´ë¼ì´ì–¸íŠ¸ FIN ìˆ˜ì‹ í™•ì¸", socket);
 		DisconnectSession(socket);
 		return false;
 	}
 	ptrSession->lastRecvTime = timeGetTime();
 	ptrRecvQueue->MoveRear(receivedSize);
 
-	//char* tmpRecvPacketHeader = new char[packetHeaderSize];
 	CommonPacketHeader tmpRecvPacketHeader;
 	SerializationBuffer tmpRecvPacketBody;
-	//int packetBodySize;
 	int queueUseSize;
 	for (;;)
 	{
 		queueUseSize = ptrRecvQueue->GetUseSize();
-		//if (queueUseSize <= packetHeaderSize)
 		if (queueUseSize < sizeof(CommonPacketHeader))
 		{
 			break;
 		}
 
-		//ptrRecvQueue->Peek(tmpRecvPacketHeader, packetHeaderSize);
 		ptrRecvQueue->Peek((char*)&tmpRecvPacketHeader, sizeof(CommonPacketHeader));
 		
-		/*if (!CheckIfCompletedPacket(tmpRecvPacketHeader, queueUseSize, &packetBodySize))
-		{
-			break;
-		}*/
 		if (tmpRecvPacketHeader.byCode != 0x89)
 		{
 			break;
@@ -255,22 +249,9 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 		{
 			break;
 		}
-
-		int beforeBodySize = tmpRecvPacketBody.GetUseSize();
-
-		//ptrRecvQueue->MoveFront(packetHeaderSize);
 		ptrRecvQueue->MoveFront(sizeof(CommonPacketHeader));
-		//tmpRecvPacketBody.MoveRear(ptrRecvQueue->Dequeue(tmpRecvPacketBody.GetRearBufferPtr(), packetBodySize));
 		int size = tmpRecvPacketBody.MoveRear(ptrRecvQueue->Dequeue(tmpRecvPacketBody.GetRearBufferPtr(), tmpRecvPacketHeader.bySize));
-		//_Log(dfLOG_LEVEL_SYSTEM, "recv packet body size: %d", size);
-		//DispatchPacketToContents(socket, tmpRecvPacketHeader, &tmpRecvPacketBody);
-		DispatchPacketToContents(socket, (char*)&tmpRecvPacketHeader, &tmpRecvPacketBody);
-
-		if (tmpRecvPacketBody.GetUseSize() > 0)
-		{
-			int tt = tmpRecvPacketBody.GetUseSize();
-			_Log(dfLOG_LEVEL_SYSTEM, "before copy: %d, after copy: %d, process copy: %d", beforeBodySize, size, tt);
-		}
+		DispatchPacketToContentsHandler(socket, (char*)&tmpRecvPacketHeader, &tmpRecvPacketBody);
 		tmpRecvPacketBody.ClearBuffer();
 	}
 
@@ -280,21 +261,22 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 
 void ProcessSendNetworkEvent(SOCKET socket)
 {
-	Session* ptrSession = FindSession(socket);
+	//Session* ptrSession = FindSession(socket);
+	Session* ptrSession = sessionList[socket];
 	RingBuffer* ptrSendQueue = &ptrSession->sendQueue;
 	int sendSize;
 
-	while (ptrSendQueue->GetUseSize())
+	while (ptrSendQueue->GetUseSize() > 0)
 	{
 		sendSize = send(socket, ptrSendQueue->GetFrontBufferPtr(), ptrSendQueue->GetDirectDequeueSize(), 0);
 		if (sendSize == SOCKET_ERROR)
 		{
-			_Log(dfLOG_LEVEL_ERROR, "[¼ÒÄÏID: %lld] SEND ERROR ¹ß»ý(CODE: %d)", socket, WSAGetLastError());
+			_Log(dfLOG_LEVEL_ERROR, "[ì†Œì¼“ID: %lld] SEND ERROR ë°œìƒ(CODE: %d)", socket, WSAGetLastError());
 			DisconnectSession(socket);
 			return;
 		}
 		ptrSendQueue->MoveFront(sendSize);
-		//_Log(dfLOG_LEVEL_ERROR, "[¼ÒÄÏID: %lld] SEND BYTE(%d)", socket, ptrSendQueue->MoveFront(sendSize));
+		//_Log(dfLOG_LEVEL_ERROR, "[ì†Œì¼“ID: %lld] SEND BYTE(%d)", socket, ptrSendQueue->MoveFront(sendSize));
 	}
 }
 
@@ -317,15 +299,16 @@ Session* CreateSession(SOCKET socket, const SOCKADDR_IN* clientAddr)
 
 bool DisconnectSession(SOCKET socket)
 {
-	WCHAR	wstrClientIp[16];
+	//WCHAR	wstrClientIp[16];
 	SerializationBuffer packetBuf;
 	Session* disconnectSession = FindSession(socket);
 	if (disconnectSession != nullptr)
 	{
-		_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] Å¬¶óÀÌ¾ðÆ® Á¢¼Ó Á¾·á, ¼ÒÄÏID=%lld"
-			, InetNtop(AF_INET, &disconnectSession->addrIn.sin_addr, wstrClientIp, 16), ntohs(disconnectSession->addrIn.sin_port), socket);
-		disconnectSession->sendQueue.ClearBuffer();
-		ProcessContentsDisconnectSessionEvent((void*)disconnectSession->socket);
+		//_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] í´ë¼ì´ì–¸íŠ¸ ì ‘ì† ì¢…ë£Œ, ì†Œì¼“ID=%lld"
+		//	, InetNtop(AF_INET, &disconnectSession->addrIn.sin_addr, wstrClientIp, 16), ntohs(disconnectSession->addrIn.sin_port), socket);
+		//disconnectSession->sendQueue.ClearBuffer();
+		ProcessContentsDisconnectSessionEvent((void*)socket);
+		delete disconnectSession;
 	}
 
 	closesocket(socket);
@@ -336,16 +319,16 @@ bool DisconnectSession(SOCKET socket)
 
 bool DisconnectSession(Session* disconnectSession)
 {
-	WCHAR	wstrClientIp[16];
+	//WCHAR	wstrClientIp[16];
 	SerializationBuffer packetBuf;
 	if (disconnectSession == nullptr)
 	{
 		return false;
 	}
 	
-	_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] Å¬¶óÀÌ¾ðÆ® Á¢¼Ó Á¾·á, ¼ÒÄÏID=%lld"
-		, InetNtop(AF_INET, &disconnectSession->addrIn.sin_addr, wstrClientIp, 16), ntohs(disconnectSession->addrIn.sin_port), disconnectSession->socket);
-	disconnectSession->sendQueue.ClearBuffer();
+	//_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] í´ë¼ì´ì–¸íŠ¸ ì ‘ì† ì¢…ë£Œ, ì†Œì¼“ID=%lld"
+	//	, InetNtop(AF_INET, &disconnectSession->addrIn.sin_addr, wstrClientIp, 16), ntohs(disconnectSession->addrIn.sin_port), disconnectSession->socket);
+	//disconnectSession->sendQueue.ClearBuffer();
 	closesocket(disconnectSession->socket);
 	sessionList.erase(disconnectSession->socket);
 	ProcessContentsDisconnectSessionEvent((void*)disconnectSession->socket);
@@ -355,9 +338,6 @@ bool DisconnectSession(Session* disconnectSession)
 
 bool SendUnicast(SOCKET socket, const char* buf, int size)
 {
-	//bool result = FindSession(socket)->sendQueue.Enqueue(buf, size) > 0;
-	//_Log(dfLOG_LEVEL_SYSTEM, "sessionId: %d, result: %d", socket, result);
-	//return result;
 	return FindSession(socket)->sendQueue.Enqueue(buf, size) > 0;
 }
 
@@ -400,7 +380,7 @@ void SetPacketHeaderSize(int size)
 
 void SetCheckIfCompltedPacketHandler(bool (*paramCheckIfCompletedPacket)(char* bufPacketHeader, int allRecivedPacketSize, int* outPacketBodySize))
 {
-	CheckIfCompletedPacket = paramCheckIfCompletedPacket;
+	CheckIfCompletedPacketHandler = paramCheckIfCompletedPacket;
 }
 
 void SetProcessContentsAcceptEvent(void (*pProcessContentsAcceptEvent)(void* param))
@@ -415,7 +395,7 @@ void SetProcessContentsDisconnectSessionEvent(void (*pProcessContentsDisconnectS
 
 void SetDispatchPacketToContentsHandler(bool (*paramDispatchPacketToContents)(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* recvPacket))
 {
-	DispatchPacketToContents = paramDispatchPacketToContents;
+	DispatchPacketToContentsHandler = paramDispatchPacketToContents;
 }
 
 void ShutdownServer(void)
