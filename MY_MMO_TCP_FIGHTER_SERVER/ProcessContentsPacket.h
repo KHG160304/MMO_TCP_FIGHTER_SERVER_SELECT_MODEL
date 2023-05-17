@@ -35,6 +35,8 @@ void MakePacketCreateMyCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE 
 
 void MakePacketCreateOtherCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp);
 
+void MakePacketCreateOtherCharacter(SerializationBuffer* packetBuf, CharacterInfo* charac);
+
 void MakePacketDeleteCharacter(SerializationBuffer* packetBuf, DWORD id);
 
 void MakePacketMoveStart(SerializationBuffer* packetBuf, DWORD id, BYTE dir, WORD xPos, WORD yPos);
@@ -44,6 +46,8 @@ void MakePacketAttack1(SerializationBuffer* packetBuf, DWORD id, BYTE dir, WORD 
 void MakePacketAttack2(SerializationBuffer* packetBuf, DWORD id, BYTE dir, WORD xPos, WORD yPos);
 
 void MakePacketAttack3(SerializationBuffer* packetBuf, DWORD id, BYTE dir, WORD xPos, WORD yPos);
+
+void MakePacketDamage(SerializationBuffer* packetBuf, DWORD attackerID, DWORD damagedID, BYTE damageHP);
 
 void ConvertPacketCreateMyCharaterToCreateOtherCharacter(SerializationBuffer* packetBuf);
 
