@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef __SECTOR_H__
 #define	__SECTOR_H__
 #include "GameContentValueSetting.h"
@@ -44,6 +44,8 @@ void GetSectorAround(SectorPos findPos, SectorAround* pSectorAround, bool includ
 void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac);
 
 void SendToMeOfSectorAroundCharacterInfo(CharacterInfo* ptrCharac);
+//내정보를 주변에 뿌리고, 상대정보를 나에게 뿌린다.
+void SendPacketByAcceptEvent(CharacterInfo* ptrCharac, const char* buf, int size);
 
 bool SearchCollision(int attackXRange, int attackYRange, const CharacterInfo* characterOnAttack, CharacterInfo** outCharacterIDOnDamage);
 #endif // !__SECTOR_H__

@@ -327,7 +327,6 @@ void SendToMeOfSectorAroundCharacterInfo(CharacterInfo* ptrCharac)
 	SerializationBuffer sendPacket;
 	SectorAround sectors;
 	int idxSectors;
-	//CharacterInfo* otherCharac;
 
 	GetSectorAround(ptrCharac->curPos, &sectors);
 
@@ -337,10 +336,33 @@ void SendToMeOfSectorAroundCharacterInfo(CharacterInfo* ptrCharac)
 		std::map<DWORD, CharacterInfo*>::iterator iter = sector.begin();
 		for (; iter != sector.end(); ++iter)
 		{
-			//otherCharac = iter->second;
 			MakePacketCreateOtherCharacter(&sendPacket, iter->second);
-			/*MakePacketCreateOtherCharacter(&sendPacket, otherCharac->characterID
-				, otherCharac->stop2Dir, otherCharac->xPos, otherCharac->yPos, otherCharac->hp);*/
+			SendUnicast(ptrCharac->socket, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
+			sendPacket.ClearBuffer();
+		}
+	}
+}
+
+void SendPacketByAcceptEvent(CharacterInfo* ptrCharac, const char* buf, int size)
+{
+	SerializationBuffer sendPacket;
+	SectorAround sendTargetSectors;
+	GetSectorAround(ptrCharac->curPos, &sendTargetSectors);
+
+	// 내정보를 주변 섹터에 뿌린다.
+	int idxSectors;
+	for (idxSectors = 0; idxSectors < sendTargetSectors.cnt; ++idxSectors)
+	{
+		SendUnicastSector(sendTargetSectors.around[idxSectors], buf, size);
+	}
+	// 주변 섹터정보를 모두 나에게 전송한다.
+	for (idxSectors = 0; idxSectors < sendTargetSectors.cnt; ++idxSectors)
+	{
+		std::map<DWORD, CharacterInfo*>& sector = sectorList[sendTargetSectors.around[idxSectors].yPos][sendTargetSectors.around[idxSectors].xPos];
+		std::map<DWORD, CharacterInfo*>::iterator iter = sector.begin();
+		for (; iter != sector.end(); ++iter)
+		{
+			MakePacketCreateOtherCharacter(&sendPacket, iter->second);
 			SendUnicast(ptrCharac->socket, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 			sendPacket.ClearBuffer();
 		}
