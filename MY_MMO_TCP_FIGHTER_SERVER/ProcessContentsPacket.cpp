@@ -95,7 +95,7 @@ CharacterInfo* CreateCharacterInfo(UINT_PTR sessionKey)
 	characInfo->curPos = sectorPos;
 	characInfo->oldPos = sectorPos;
 
-	gCharacterID += 1;
+	gCharacterID = (gCharacterID + 1) % INVALID_CHARACTER_ID;
 	return characInfo;
 }
 
