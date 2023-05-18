@@ -122,15 +122,14 @@ int RingBuffer::Enqueue(const char* data, int size)
 	}
 
 	int nextRearIndex = (this->__queueRearIndex + size) % this->__capacity;
-	char* ptrCopyStart = this->__internalBuffer + this->__queueRearIndex;
 	if (nextRearIndex <= this->__queueRearIndex && nextRearIndex != 0)
 	{
-		memcpy(ptrCopyStart, data, size - nextRearIndex);
+		memcpy(this->__internalBuffer + this->__queueRearIndex, data, size - nextRearIndex);
 		memcpy(this->__internalBuffer, data + (size - nextRearIndex), nextRearIndex);
 	}
 	else
 	{
-		memcpy(ptrCopyStart, data, size);
+		memcpy(this->__internalBuffer + this->__queueRearIndex, data, size);
 	}
 
 	this->__queueRearIndex = nextRearIndex;
@@ -145,15 +144,14 @@ int RingBuffer::Dequeue(char* const buffer, int size)
 	}
 
 	int nextFrontIndex = (this->__queueFrontIndex + size) % this->__capacity;
-	char* ptrCopyStart = this->__internalBuffer + this->__queueFrontIndex;
 	if (nextFrontIndex <= this->__queueFrontIndex && nextFrontIndex != 0)
 	{
-		memcpy(buffer, ptrCopyStart, size - nextFrontIndex);
+		memcpy(buffer, this->__internalBuffer + this->__queueFrontIndex, size - nextFrontIndex);
 		memcpy(buffer + (size - nextFrontIndex), this->__internalBuffer, nextFrontIndex);
 	}
 	else
 	{
-		memcpy(buffer, ptrCopyStart, size);
+		memcpy(buffer, this->__internalBuffer + this->__queueFrontIndex, size);
 	}
 
 	this->__queueFrontIndex = nextFrontIndex;
@@ -168,15 +166,14 @@ int RingBuffer::Peek(char* const buffer, int size)
 	}
 
 	int nextFrontIndex = (this->__queueFrontIndex + size) % this->__capacity;
-	char* ptrCopyStart = this->__internalBuffer + this->__queueFrontIndex;
 	if (nextFrontIndex <= this->__queueFrontIndex && nextFrontIndex != 0)
 	{
-		memcpy(buffer, ptrCopyStart, size - nextFrontIndex);
+		memcpy(buffer, this->__internalBuffer + this->__queueFrontIndex, size - nextFrontIndex);
 		memcpy(buffer + (size - nextFrontIndex), this->__internalBuffer, nextFrontIndex);
 	}
 	else
 	{
-		memcpy(buffer, ptrCopyStart, size);
+		memcpy(buffer, this->__internalBuffer + this->__queueFrontIndex, size);
 	}
 
 	return size;
