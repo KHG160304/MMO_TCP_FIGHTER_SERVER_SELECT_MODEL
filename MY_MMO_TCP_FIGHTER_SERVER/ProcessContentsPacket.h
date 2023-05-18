@@ -33,6 +33,8 @@ void MakePacketSyncXYPos(SerializationBuffer* packetBuf, DWORD id, WORD xPos, WO
 
 void MakePacketCreateMyCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp);
 
+void MakePacketCreateMyCharacter(SerializationBuffer* packetBuf, CharacterInfo* charac);
+
 void MakePacketCreateOtherCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp);
 
 void MakePacketCreateOtherCharacter(SerializationBuffer* packetBuf, CharacterInfo* charac);

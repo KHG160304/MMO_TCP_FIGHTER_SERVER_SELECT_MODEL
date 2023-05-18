@@ -30,15 +30,16 @@ void ProcessAcceptEvent(void* param)
 	CharacterInfo* characInfo = CreateCharacterInfo((SOCKET)param);
 
 	SerializationBuffer sendPacket;
-	MakePacketCreateMyCharacter(&sendPacket, characInfo->characterID, dfPACKET_MOVE_DIR_LL, characInfo->xPos, characInfo->yPos, defCHARACTER_DEFAULT_HP);
-	int i = SendUnicast((SOCKET)param, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
-	_Log(dfLOG_LEVEL_DEBUG, "CREATE CHARACTER_ID[%d] PACKET SEND [%d]"
-		, characInfo->characterID, i);
+	//MakePacketCreateMyCharacter(&sendPacket, characInfo->characterID, dfPACKET_MOVE_DIR_LL, characInfo->xPos, characInfo->yPos, defCHARACTER_DEFAULT_HP);
+	MakePacketCreateMyCharacter(&sendPacket, characInfo);
+	SendUnicast((SOCKET)param, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
+	//_Log(dfLOG_LEVEL_DEBUG, "CREATE CHARACTER_ID[%d] PACKET SEND [%d]"
+	//	, characInfo->characterID, i);
 
 	ConvertPacketCreateMyCharaterToCreateOtherCharacter(&sendPacket);
-	SendSectorAround(characInfo, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), true);
-	SendToMeOfSectorAroundCharacterInfo(characInfo);
-
+	//SendSectorAround(characInfo, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), true);
+	//SendToMeOfSectorAroundCharacterInfo(characInfo);
+	SendPacketByAcceptEvent(characInfo, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 	characterList.insert({ (SOCKET)param, characInfo });
 	// 섹터에 추가
 	Sector_AddCharacter(characInfo);
@@ -159,6 +160,17 @@ void MakePacketCreateMyCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE 
 
 	packetBuf->Enqueue((char*)&packetHeader, sizeof(CommonPacketHeader));
 	(*packetBuf) << id << stop2Dir << xPos << yPos << hp;
+}
+
+void MakePacketCreateMyCharacter(SerializationBuffer* packetBuf, CharacterInfo* charac)
+{
+	CommonPacketHeader packetHeader;
+	packetHeader.byCode = dfPACKET_CODE;
+	packetHeader.bySize = sizeof(DWORD) + sizeof(BYTE) + sizeof(WORD) + sizeof(WORD) + sizeof(BYTE);
+	packetHeader.byType = dfPACKET_SC_CREATE_MY_CHARACTER;
+
+	packetBuf->Enqueue((char*)&packetHeader, sizeof(CommonPacketHeader));
+	(*packetBuf) << charac->characterID << charac->stop2Dir << charac->xPos << charac->yPos << charac->hp;
 }
 
 void MakePacketCreateOtherCharacter(SerializationBuffer* packetBuf, DWORD id, BYTE stop2Dir, WORD xPos, WORD yPos, BYTE hp)
@@ -546,44 +558,56 @@ void Update()
 			switch (ptrCharac->action)
 			{
 			case dfPACKET_MOVE_DIR_LL:
-				ptrCharac->xPos = max(xPos - dfSPEED_PLAYER_X, dfRANGE_MOVE_LEFT);
+				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT)
+				{
+					ptrCharac->xPos -= dfSPEED_PLAYER_X;
+				}
 				break;
 			case dfPACKET_MOVE_DIR_LU:
-				if (xPos > dfRANGE_MOVE_LEFT && yPos > dfRANGE_MOVE_TOP)
+				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
 				{
-					ptrCharac->xPos = max(xPos - dfSPEED_PLAYER_X, dfRANGE_MOVE_LEFT);
-					ptrCharac->yPos = max(yPos - dfSPEED_PLAYER_Y, dfRANGE_MOVE_TOP);
+					ptrCharac->xPos -= dfSPEED_PLAYER_X;
+					ptrCharac->yPos -= dfSPEED_PLAYER_Y;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_LD:
-				if (xPos > dfRANGE_MOVE_LEFT && yPos < dfRANGE_MOVE_BOTTOM)
+				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
 				{
-					ptrCharac->xPos = max(xPos - dfSPEED_PLAYER_X, dfRANGE_MOVE_LEFT);
-					ptrCharac->yPos = min(yPos + dfSPEED_PLAYER_Y, dfRANGE_MOVE_BOTTOM);
+					ptrCharac->xPos -= dfSPEED_PLAYER_X;
+					ptrCharac->yPos += dfSPEED_PLAYER_Y;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_UU:
-				ptrCharac->yPos = max(yPos - dfSPEED_PLAYER_Y, dfRANGE_MOVE_TOP);
+				if (yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
+				{
+					ptrCharac->yPos -= dfSPEED_PLAYER_Y;
+				}
 				break;
 			case dfPACKET_MOVE_DIR_RU:
-				if (xPos < dfRANGE_MOVE_RIGHT && yPos > dfRANGE_MOVE_TOP)
+				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
 				{
-					ptrCharac->xPos = min(xPos + dfSPEED_PLAYER_X, dfRANGE_MOVE_RIGHT);
-					ptrCharac->yPos = max(yPos - dfSPEED_PLAYER_Y, dfRANGE_MOVE_TOP);
+					ptrCharac->xPos += dfSPEED_PLAYER_X;
+					ptrCharac->yPos -= dfSPEED_PLAYER_Y;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_RR:
-				ptrCharac->xPos = min(xPos + dfSPEED_PLAYER_X, dfRANGE_MOVE_RIGHT);
+				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT)
+				{
+					ptrCharac->xPos += dfSPEED_PLAYER_X;
+				}
 				break;
 			case dfPACKET_MOVE_DIR_RD:
-				if (xPos < dfRANGE_MOVE_RIGHT && yPos < dfRANGE_MOVE_BOTTOM)
+				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
 				{
-					ptrCharac->xPos = min(xPos + dfSPEED_PLAYER_X, dfRANGE_MOVE_RIGHT);
-					ptrCharac->yPos = min(yPos + dfSPEED_PLAYER_Y, dfRANGE_MOVE_BOTTOM);
+					ptrCharac->xPos += dfSPEED_PLAYER_X;
+					ptrCharac->yPos += dfSPEED_PLAYER_Y;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_DD:
-				ptrCharac->yPos = min(yPos + dfSPEED_PLAYER_Y, dfRANGE_MOVE_BOTTOM);
+				if (yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
+				{
+					ptrCharac->yPos += dfSPEED_PLAYER_Y;
+				}
 				break;
 			}
 
