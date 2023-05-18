@@ -10,7 +10,7 @@
 #pragma comment(lib, "winmm")
 
 #define MAX_CON_SESSION	6000
-#define	SERVERPORT		5000
+#define	SERVERPORT		11601
 #define USER_FD_SETSIZE	FD_SETSIZE - 1 
 
 struct CommonPacketHeader
@@ -197,11 +197,11 @@ void ProcessAcceptNetworkEvent(void)
 		return;
 	}
 
-	WCHAR wstrClientIp[16];
+	//WCHAR wstrClientIp[16];
 	Session* newSession = CreateSession(clientSock, &clientAddr);
-	_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] 클라이언트 접속"
-		, InetNtop(AF_INET, &clientAddr.sin_addr, wstrClientIp, 16)
-		, ntohs(clientAddr.sin_port));
+	//_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] 클라이언트 접속"
+	//	, InetNtop(AF_INET, &clientAddr.sin_addr, wstrClientIp, 16)
+	//	, ntohs(clientAddr.sin_port));
 
 	ProcessContentsAcceptEvent((void*)clientSock);
 }
@@ -250,7 +250,7 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 			break;
 		}
 		ptrRecvQueue->MoveFront(sizeof(CommonPacketHeader));
-		int size = tmpRecvPacketBody.MoveRear(ptrRecvQueue->Dequeue(tmpRecvPacketBody.GetRearBufferPtr(), tmpRecvPacketHeader.bySize));
+		tmpRecvPacketBody.MoveRear(ptrRecvQueue->Dequeue(tmpRecvPacketBody.GetRearBufferPtr(), tmpRecvPacketHeader.bySize));
 		DispatchPacketToContentsHandler(socket, (char*)&tmpRecvPacketHeader, &tmpRecvPacketBody);
 		tmpRecvPacketBody.ClearBuffer();
 	}
