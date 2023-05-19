@@ -524,10 +524,12 @@ bool ProcessPacketEcho(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacketBo
 	return true;
 }
 
+//#define UPDATE_TEST
+static DWORD startTime = StartMonitor();
 void Update()
 {
 	CountLoop();
-	static DWORD startTime = StartMonitor();
+	//static DWORD startTime = StartMonitor();
 	DWORD endTime = timeGetTime();
 	DWORD intervalTime = endTime - startTime;
 	if (intervalTime < INTERVAL_FPS(25))
@@ -552,6 +554,7 @@ void Update()
 		}
 		else if (ptrCharac->action != INVALID_ACTION)
 		{
+#ifdef UPDATE_TEST
 			switch (ptrCharac->action)
 			{
 			case dfPACKET_MOVE_DIR_LL:
@@ -607,7 +610,136 @@ void Update()
 				}
 				break;
 			}
+#else	
+			int xPos;
+			int yPos;
 
+			switch (ptrCharac->action)
+			{
+			case dfPACKET_MOVE_DIR_LL:
+				xPos = ptrCharac->xPos;
+				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT)
+				{
+					ptrCharac->xPos = xPos - dfSPEED_PLAYER_X;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_LU:
+				xPos = ptrCharac->xPos;
+				yPos = ptrCharac->yPos;
+				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
+				{
+					ptrCharac->xPos = xPos - dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos - dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_LD:
+				xPos = ptrCharac->xPos;
+				yPos = ptrCharac->yPos;
+				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
+				{
+					ptrCharac->xPos = xPos - dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos + dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_UU:
+				yPos = ptrCharac->yPos;
+				if (yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
+				{
+					ptrCharac->yPos = yPos - dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_RU:
+				xPos = ptrCharac->xPos;
+				yPos = ptrCharac->yPos;
+				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
+				{
+					ptrCharac->xPos = xPos + dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos - dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_RR:
+				xPos = ptrCharac->xPos;
+				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT)
+				{
+					ptrCharac->xPos = xPos + dfSPEED_PLAYER_X;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_RD:
+				xPos = ptrCharac->xPos;
+				yPos = ptrCharac->yPos;
+				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
+				{
+					ptrCharac->xPos = xPos + dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos + dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_DD:
+				yPos = ptrCharac->yPos;
+				if (yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
+				{
+					ptrCharac->yPos = yPos + dfSPEED_PLAYER_Y;
+				}
+				break;
+			}
+			/*int xPos = ptrCharac->xPos;
+			int yPos = ptrCharac->yPos;
+
+			switch (ptrCharac->action)
+			{
+			case dfPACKET_MOVE_DIR_LL:
+				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT)
+				{
+					ptrCharac->xPos = xPos - dfSPEED_PLAYER_X;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_LU:
+				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
+				{
+					ptrCharac->xPos = xPos - dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos - dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_LD:
+				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
+				{
+					ptrCharac->xPos = xPos - dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos + dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_UU:
+				if (yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
+				{
+					ptrCharac->yPos = yPos - dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_RU:
+				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
+				{
+					ptrCharac->xPos = xPos + dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos - dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_RR:
+				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT)
+				{
+					ptrCharac->xPos = xPos + dfSPEED_PLAYER_X;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_RD:
+				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
+				{
+					ptrCharac->xPos = xPos + dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos + dfSPEED_PLAYER_Y;
+				}
+				break;
+			case dfPACKET_MOVE_DIR_DD:
+				if (yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
+				{
+					ptrCharac->yPos = yPos + dfSPEED_PLAYER_Y;
+				}
+				break;
+			}*/
+#endif // UPDATE_TEST
 			//_Log(dfLOG_LEVEL_DEBUG, "[ID:%d] run x: %d/y: %d"
 			//	, ptrCharac->characterID, ptrCharac->xPos, ptrCharac->yPos);
 
