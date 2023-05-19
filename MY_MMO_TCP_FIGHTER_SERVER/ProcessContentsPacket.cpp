@@ -619,53 +619,53 @@ void Update()
 			case dfPACKET_MOVE_DIR_LL:
 				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT)
 				{
-					ptrCharac->xPos -= dfSPEED_PLAYER_X;
+					ptrCharac->xPos = xPos - dfSPEED_PLAYER_X;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_LU:
 				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
 				{
-					ptrCharac->xPos -= dfSPEED_PLAYER_X;
-					ptrCharac->yPos -= dfSPEED_PLAYER_Y;
+					ptrCharac->xPos = xPos - dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos - dfSPEED_PLAYER_Y;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_LD:
 				if (xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
 				{
-					ptrCharac->xPos -= dfSPEED_PLAYER_X;
-					ptrCharac->yPos += dfSPEED_PLAYER_Y;
+					ptrCharac->xPos = xPos - dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos + dfSPEED_PLAYER_Y;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_UU:
 				if (yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
 				{
-					ptrCharac->yPos -= dfSPEED_PLAYER_Y;
+					ptrCharac->yPos = yPos - dfSPEED_PLAYER_Y;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_RU:
 				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
 				{
-					ptrCharac->xPos += dfSPEED_PLAYER_X;
-					ptrCharac->yPos -= dfSPEED_PLAYER_Y;
+					ptrCharac->xPos = xPos + dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos - dfSPEED_PLAYER_Y;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_RR:
 				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT)
 				{
-					ptrCharac->xPos += dfSPEED_PLAYER_X;
+					ptrCharac->xPos = xPos + dfSPEED_PLAYER_X;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_RD:
 				if (xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
 				{
-					ptrCharac->xPos += dfSPEED_PLAYER_X;
-					ptrCharac->yPos += dfSPEED_PLAYER_Y;
+					ptrCharac->xPos = xPos + dfSPEED_PLAYER_X;
+					ptrCharac->yPos = yPos + dfSPEED_PLAYER_Y;
 				}
 				break;
 			case dfPACKET_MOVE_DIR_DD:
 				if (yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
 				{
-					ptrCharac->yPos += dfSPEED_PLAYER_Y;
+					ptrCharac->yPos = yPos + dfSPEED_PLAYER_Y;
 				}
 				break;
 			}
