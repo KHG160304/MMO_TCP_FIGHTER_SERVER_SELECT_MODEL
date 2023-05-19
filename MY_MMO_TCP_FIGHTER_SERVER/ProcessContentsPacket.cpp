@@ -524,7 +524,6 @@ bool ProcessPacketEcho(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPacketBo
 	return true;
 }
 
-//#define UPDATE_TEST
 static DWORD startTime = StartMonitor();
 void Update()
 {
@@ -554,63 +553,7 @@ void Update()
 		}
 		else if (ptrCharac->action != INVALID_ACTION)
 		{
-#ifdef UPDATE_TEST
-			switch (ptrCharac->action)
-			{
-			case dfPACKET_MOVE_DIR_LL:
-				if (ptrCharac->xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT)
-				{
-					ptrCharac->xPos -= dfSPEED_PLAYER_X;
-				}
-				break;
-			case dfPACKET_MOVE_DIR_LU:
-				if (ptrCharac->xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && ptrCharac->yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
-				{
-					ptrCharac->xPos -= dfSPEED_PLAYER_X;
-					ptrCharac->yPos -= dfSPEED_PLAYER_Y;
-				}
-				break;
-			case dfPACKET_MOVE_DIR_LD:
-				if (ptrCharac->xPos - dfSPEED_PLAYER_X > dfRANGE_MOVE_LEFT && ptrCharac->yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
-				{
-					ptrCharac->xPos -= dfSPEED_PLAYER_X;
-					ptrCharac->yPos += dfSPEED_PLAYER_Y;
-				}
-				break;
-			case dfPACKET_MOVE_DIR_UU:
-				if (ptrCharac->yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
-				{
-					ptrCharac->yPos -= dfSPEED_PLAYER_Y;
-				}
-				break;
-			case dfPACKET_MOVE_DIR_RU:
-				if (ptrCharac->xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && ptrCharac->yPos - dfSPEED_PLAYER_Y > dfRANGE_MOVE_TOP)
-				{
-					ptrCharac->xPos += dfSPEED_PLAYER_X;
-					ptrCharac->yPos -= dfSPEED_PLAYER_Y;
-				}
-				break;
-			case dfPACKET_MOVE_DIR_RR:
-				if (ptrCharac->xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT)
-				{
-					ptrCharac->xPos += dfSPEED_PLAYER_X;
-				}
-				break;
-			case dfPACKET_MOVE_DIR_RD:
-				if (ptrCharac->xPos + dfSPEED_PLAYER_X < dfRANGE_MOVE_RIGHT && ptrCharac->yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
-				{
-					ptrCharac->xPos += dfSPEED_PLAYER_X;
-					ptrCharac->yPos += dfSPEED_PLAYER_Y;
-				}
-				break;
-			case dfPACKET_MOVE_DIR_DD:
-				if (ptrCharac->yPos + dfSPEED_PLAYER_Y < dfRANGE_MOVE_BOTTOM)
-				{
-					ptrCharac->yPos += dfSPEED_PLAYER_Y;
-				}
-				break;
-			}
-#else	
+
 			int xPos = ptrCharac->xPos;
 			int yPos = ptrCharac->yPos;
 
@@ -669,7 +612,6 @@ void Update()
 				}
 				break;
 			}
-#endif // UPDATE_TEST
 			//_Log(dfLOG_LEVEL_DEBUG, "[ID:%d] run x: %d/y: %d"
 			//	, ptrCharac->characterID, ptrCharac->xPos, ptrCharac->yPos);
 
