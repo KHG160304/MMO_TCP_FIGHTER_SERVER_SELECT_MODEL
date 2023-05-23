@@ -92,7 +92,14 @@ int RingBuffer::GetDirectEnqueueSize(void) const
 	int _loadFrontIndex = this->__queueFrontIndex;
 	if (_loadRearIndex >= _loadFrontIndex)
 	{
-		return this->__capacity - _loadRearIndex - 1;
+		if (_loadFrontIndex > 0)
+		{
+			return this->__capacity - _loadRearIndex;
+		}
+		else
+		{
+			return this->__capacity - _loadRearIndex - 1;
+		}
 	}
 	else
 	{
