@@ -5,6 +5,12 @@
 #include "Sector.h"
 #include <winsock2.h>
 
+/*union WorldPos
+{
+	struct { WORD xPos, yPos; };
+	DWORD dwPos;
+};*/
+
 struct CharacterInfo
 {
 	SOCKET	socket;
@@ -12,6 +18,7 @@ struct CharacterInfo
 	DWORD	dwActionTick;
 	WORD	xPos;
 	WORD	yPos;
+	//WorldPos pos;
 	WORD	actionXpos;
 	WORD	actionYpos;
 	BYTE	stop2Dir;
