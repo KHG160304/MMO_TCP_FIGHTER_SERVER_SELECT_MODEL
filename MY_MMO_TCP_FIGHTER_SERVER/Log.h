@@ -19,7 +19,8 @@ do {																	\
 	{																	\
 		localTime = time(nullptr);										\
 		localtime_s(&timestamp, &localTime);							\
-		StringCchPrintf(gLogBuffer, 2048, L"%-8s [%04d-%02d-%02d %02d:%02d:%02d] [%hs:%hs:%d] " fmt						\
+		StringCchPrintf(gLogBuffer, 2048								\
+			, L"%-8s [%04d-%02d-%02d %02d:%02d:%02d] [%hs:%hs:%d] " fmt	\
 			, strLogLevel[logLevel]										\
 			, timestamp.tm_year + 1900									\
 			, timestamp.tm_mon + 1										\

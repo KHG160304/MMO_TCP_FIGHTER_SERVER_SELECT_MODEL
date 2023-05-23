@@ -15,12 +15,10 @@
 
 struct CharacterInfo;
 
-typedef unsigned short WORD;
-
 struct SectorPos                   
 {
-	WORD xPos;
-	WORD yPos;
+	short xPos;
+	short yPos;
 };
 
 struct SectorAround
@@ -31,7 +29,7 @@ struct SectorAround
 
 size_t GetSectorCharacterCnt(void);
 
-SectorPos ConvertWorldPosToSectorPos(WORD worldXPos, WORD worldYPos);
+SectorPos ConvertWorldPosToSectorPos(short worldXPos, short worldYPos);
 
 void Sector_AddCharacter(CharacterInfo* charac);
 void Sector_RemoveCharacter(CharacterInfo* charac);

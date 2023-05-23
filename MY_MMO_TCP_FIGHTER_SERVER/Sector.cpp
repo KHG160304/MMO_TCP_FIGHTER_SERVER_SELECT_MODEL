@@ -10,11 +10,11 @@ static const int SECTOR_WIDTH = dfSECTOR_WIDTH;
 
 std::map<DWORD, CharacterInfo*> sectorList[SECTOR_HEIGHT][SECTOR_WIDTH];
 
-SectorPos ConvertWorldPosToSectorPos(WORD worldXPos, WORD worldYPos)
+SectorPos ConvertWorldPosToSectorPos(short worldXPos, short worldYPos)
 {
 	return {
-		(WORD)(worldXPos / dfSIX_FRAME_X_DISTANCE),
-		(WORD)(worldYPos / dfSIX_FRAME_Y_DISTANCE)
+		(short)(worldXPos / dfSIX_FRAME_X_DISTANCE),
+		(short)(worldYPos / dfSIX_FRAME_Y_DISTANCE)
 	};
 }
 
@@ -69,10 +69,11 @@ size_t GetSectorCharacterCnt(void)
 
 void GetSectorAround(SectorPos findSector, SectorAround* pSectorAround, bool includeFindSector)
 {
-	WORD y, x;
-	WORD endYPos = findSector.yPos + 1;
-	WORD endXPos = findSector.xPos + 1;
 	
+	short endYPos = findSector.yPos + 1;
+	short endXPos = findSector.xPos + 1;
+	short y, x;
+
 	if (includeFindSector == false)
 	{
 		int idx = 0;
@@ -116,7 +117,7 @@ void GetSectorAround(SectorPos findSector, SectorAround* pSectorAround, bool inc
 				continue;
 			}
 
-			pSectorAround->around[idx++] = {x, y};
+			pSectorAround->around[idx++] = { x, y };
 		}
 	}
 
