@@ -376,7 +376,6 @@ bool SearchCollision(int attackXRange, int attackYRange, const CharacterInfo* ch
 	SectorPos posOnAttacker = characterOnAttack->curPos;
 	int attackerXPos = characterOnAttack->xPos;
 	int attackerYPos = characterOnAttack->yPos;
-	//int attackerXPosPlusDir;
 
 	int tmpDistanceX;
 	int tmpDistanceY;
@@ -386,103 +385,6 @@ bool SearchCollision(int attackXRange, int attackYRange, const CharacterInfo* ch
 	int tmpX;
 	int cnt;
 	CharacterInfo* targetCharacter = nullptr;
-
-	/*if (characterOnAttack->stop2Dir == dfPACKET_MOVE_DIR_LL)
-	{
-		attackerXPosPlusDir = attackerXPos;
-	}
-	else if (characterOnAttack->stop2Dir == dfPACKET_MOVE_DIR_RR)
-	{
-		attackerXPosPlusDir = attackerXPos * -1;
-	}
-	else
-	{
-		return false;
-	}
-
-	for (tmpX = posOnAttacker.xPos, cnt = 2; targetCharacter == nullptr && tmpX > -1 && cnt != 0; --tmpX, --cnt)
-	{
-		std::map<DWORD, CharacterInfo*> characterList = sectorList[posOnAttacker.yPos][tmpX];
-		std::map<DWORD, CharacterInfo*>::iterator iter = characterList.begin();
-		for (; iter != characterList.end(); ++iter)
-		{
-			charac = iter->second;
-			if (charac->characterID == characterOnAttack->characterID)
-			{
-				continue;
-			}
-			tmpDistanceX = attackerXPosPlusDir - charac->xPos;
-			tmpDistanceY = abs(charac->yPos - attackerYPos);
-
-			if ((tmpDistanceX >= 0 && tmpDistanceX <= attackXRange) && tmpDistanceY <= attackYRange)
-			{
-				if ((tmpDistanceX < minDistanceX)
-					|| (tmpDistanceX == minDistanceX && tmpDistanceY < minDistanceY))
-				{
-					minDistanceX = tmpDistanceX;
-					minDistanceY = tmpDistanceY;
-					targetCharacter = charac;
-				}
-			}
-		}
-
-		if (targetCharacter != nullptr)
-		{
-			*outCharacterIDOnDamage = targetCharacter;
-			return true;
-		}
-	}
-
-	int tmpYUp = ((attackerYPos - attackYRange) / dfSIX_FRAME_Y_DISTANCE);
-	int tmpYDown = ((attackerYPos + attackYRange) / dfSIX_FRAME_Y_DISTANCE);
-	int searchEndY = -1;
-
-	if (tmpYUp > -1 && tmpYUp == posOnAttacker.yPos - 1)
-	{
-		searchEndY = tmpYUp;
-	}
-	else if (tmpYDown < dfSECTOR_HEIGHT&& tmpYDown == posOnAttacker.yPos + 1)
-	{
-		searchEndY = tmpYDown;
-	}
-
-	if (searchEndY != -1)
-	{
-		for (tmpX = posOnAttacker.xPos, cnt = 2; targetCharacter == nullptr && tmpX > -1 && cnt != 0; --tmpX, --cnt)
-		{
-			std::map<DWORD, CharacterInfo*> characterList = sectorList[searchEndY][tmpX];
-			std::map<DWORD, CharacterInfo*>::iterator iter = characterList.begin();
-			for (; iter != characterList.end(); ++iter)
-			{
-				charac = iter->second;
-				if (charac->characterID == characterOnAttack->characterID)
-				{
-					continue;
-				}
-				tmpDistanceX = attackerXPos - charac->xPos;
-				tmpDistanceY = abs(charac->yPos - attackerYPos);
-
-				if ((tmpDistanceX >= 0 && tmpDistanceX <= attackXRange) && tmpDistanceY <= attackYRange)
-				{
-					if ((tmpDistanceX < minDistanceX)
-						|| (tmpDistanceX == minDistanceX && tmpDistanceY < minDistanceY))
-					{
-						minDistanceX = tmpDistanceX;
-						minDistanceY = tmpDistanceY;
-						targetCharacter = charac;
-					}
-				}
-			}
-
-			if (targetCharacter != nullptr)
-			{
-				*outCharacterIDOnDamage = targetCharacter;
-				return true;
-			}
-		}
-	}
-
-	return false;*/
 
 	if (characterOnAttack->stop2Dir == dfPACKET_MOVE_DIR_LL)
 	{

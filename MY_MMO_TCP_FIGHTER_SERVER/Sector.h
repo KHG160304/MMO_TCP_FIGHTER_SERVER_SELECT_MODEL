@@ -4,8 +4,8 @@
 #include "GameContentValueSetting.h"
 #include <map>
 
-#define dfSIX_FRAME_X_DISTANCE	(dfSPEED_PLAYER_X * 10)
-#define dfSIX_FRAME_Y_DISTANCE	(dfSPEED_PLAYER_Y * 10)
+#define dfSIX_FRAME_X_DISTANCE	(dfSPEED_PLAYER_X * 10 * 2)
+#define dfSIX_FRAME_Y_DISTANCE	(dfSPEED_PLAYER_Y * 10 * 2)
 #define dfSECTOR_WIDTH		(dfRANGE_MOVE_RIGHT / dfSIX_FRAME_X_DISTANCE) + 1
 #define dfSECTOR_HEIGHT		(dfRANGE_MOVE_BOTTOM / dfSIX_FRAME_Y_DISTANCE) + 1
 #define	USER_VISIBLE_SECTOR_WIDTH	3;
