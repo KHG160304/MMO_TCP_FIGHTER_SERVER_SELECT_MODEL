@@ -110,10 +110,10 @@ void ProcessNetworkIOEvent(void)
 	{
 		tmpPtrSesion = iter->second;
 		socketTable[socketCnt] = tmpPtrSesion->socket;
-		FD_SET(socketTable[socketCnt], &rset);
+		FD_SET(tmpPtrSesion->socket, &rset);
 		if (tmpPtrSesion->sendQueue.GetUseSize() > 0)
 		{
-			FD_SET(socketTable[socketCnt], &wset);
+			FD_SET(tmpPtrSesion->socket, &wset);
 		}
 
 		++iter;
@@ -170,9 +170,9 @@ void ProcessSelectIOEvent(const SOCKET* socketTable, FD_SET* rset, FD_SET* wset)
 				selectCnt -= 1;
 				if (isNetworkIOPossible)
 				{
-					PRO_BEGIN(L"ProcessSendNetworkEvent");
+					//PRO_BEGIN(L"ProcessSendNetworkEvent");
 					ProcessSendNetworkEvent(socketTable[i]);
-					PRO_END(L"ProcessSendNetworkEvent");
+					//PRO_END(L"ProcessSendNetworkEvent");
 				}
 			}
 		}
@@ -260,9 +260,9 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 
 void ProcessSendNetworkEvent(SOCKET socket)
 {
-	//Session* ptrSession = FindSession(socket);
-	Session* ptrSession = sessionList[socket];
-	RingBuffer* ptrSendQueue = &ptrSession->sendQueue;
+	//Session* ptrSession1 = FindSession(socket);
+	//Session* ptrSession = sessionList[socket];
+	RingBuffer* ptrSendQueue = &sessionList[socket]->sendQueue;
 	int sendSize;
 
 	while (ptrSendQueue->GetUseSize() > 0)
@@ -299,8 +299,7 @@ Session* CreateSession(SOCKET socket, const SOCKADDR_IN* clientAddr)
 bool DisconnectSession(SOCKET socket)
 {
 	//WCHAR	wstrClientIp[16];
-	SerializationBuffer packetBuf;
-	Session* disconnectSession = FindSession(socket);
+	Session* disconnectSession = sessionList[socket];
 	if (disconnectSession != nullptr)
 	{
 		//_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] 클라이언트 접속 종료, 소켓ID=%lld"
@@ -319,12 +318,10 @@ bool DisconnectSession(SOCKET socket)
 bool DisconnectSession(Session* disconnectSession)
 {
 	//WCHAR	wstrClientIp[16];
-	SerializationBuffer packetBuf;
 	if (disconnectSession == nullptr)
 	{
 		return false;
 	}
-	
 	//_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] 클라이언트 접속 종료, 소켓ID=%lld"
 	//	, InetNtop(AF_INET, &disconnectSession->addrIn.sin_addr, wstrClientIp, 16), ntohs(disconnectSession->addrIn.sin_port), disconnectSession->socket);
 	//disconnectSession->sendQueue.ClearBuffer();
@@ -337,7 +334,7 @@ bool DisconnectSession(Session* disconnectSession)
 
 bool SendUnicast(SOCKET socket, const char* buf, int size)
 {
-	return FindSession(socket)->sendQueue.Enqueue(buf, size) > 0;
+	return sessionList[socket]->sendQueue.Enqueue(buf, size) > 0;
 }
 
 void SendBroadcast(const char* buf, int size, SOCKET excludeSessionId)
