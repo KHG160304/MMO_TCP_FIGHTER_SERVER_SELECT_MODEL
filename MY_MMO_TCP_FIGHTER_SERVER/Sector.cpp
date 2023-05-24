@@ -176,7 +176,7 @@ void GetUpdateSectorAround(CharacterInfo* ptrCharac, SectorAround* ptrRemoveSect
 	ptrAddSectors->cnt = addSectorsCnt;
 }
 
-void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
+void CharacterSectorUpdatePacket(CharacterInfo* ptrMyCharac)
 {
 	SerializationBuffer packetBuf;
 
@@ -191,16 +191,16 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 
 	CharacterInfo* addSecterCharac;
 
-	GetUpdateSectorAround(ptrCharac, &removeSectors, &addSectors);
-
+	GetUpdateSectorAround(ptrMyCharac, &removeSectors, &addSectors);
+	DWORD myCharacterID = ptrMyCharac->characterID;
 	/*
 		removeSectors에 존재하는 캐릭터들에게,
 		ptrCharac의 정보를 화면에서 지우라고 함
 	*/
-	MakePacketDeleteCharacter(&packetBuf, ptrCharac->characterID);
+	MakePacketDeleteCharacter(&packetBuf, myCharacterID);
 	for (idxRemoveSectors = 0; idxRemoveSectors < removeSectors.cnt; ++idxRemoveSectors)
 	{
-		SendUnicastSector(removeSectors.around[idxRemoveSectors], packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharac->characterID);
+		SendUnicastSector(removeSectors.around[idxRemoveSectors], packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), myCharacterID);
 	}
 	
 	/*
@@ -214,13 +214,13 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 		std::map<DWORD, CharacterInfo*>::iterator iter = removeCharacterMap.begin();
 		for (; iter != removeCharacterMap.end(); ++iter)
 		{
-			if (iter->first == ptrCharac->characterID)
+			if (iter->first == myCharacterID)
 			{
 				continue;
 			}
 			packetBuf.ClearBuffer();
 			MakePacketDeleteCharacter(&packetBuf, iter->first);
-			SendUnicast(ptrCharac->socket, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+			SendUnicast(ptrMyCharac->socket, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 		}
 	}
 
@@ -232,11 +232,12 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 
 	//MakePacketCreateOtherCharacter(&packetBuf, ptrCharac->characterID
 	//	, ptrCharac->stop2Dir, ptrCharac->xPos, ptrCharac->yPos, ptrCharac->hp);
-	MakePacketCreateOtherCharacter(&packetBuf, ptrCharac);
-	MakePacketMoveStart(&packetBuf, ptrCharac->characterID, ptrCharac->move8Dir, ptrCharac->xPos, ptrCharac->yPos);
+	MakePacketCreateOtherCharacter(&packetBuf, ptrMyCharac);
+	//MakePacketMoveStart(&packetBuf, ptrCharac->characterID, ptrCharac->move8Dir, ptrCharac->xPos, ptrCharac->yPos);
+	MakePacketMoveStart(&packetBuf, ptrMyCharac);
 	for (idxAddSectors = 0; idxAddSectors < addSectors.cnt; ++idxAddSectors)
 	{
-		SendUnicastSector(addSectors.around[idxAddSectors], packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), ptrCharac->characterID);
+		SendUnicastSector(addSectors.around[idxAddSectors], packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize(), myCharacterID);
 	}
 
 	/*
@@ -250,7 +251,7 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 		std::map<DWORD, CharacterInfo*>::iterator iter = addCharacterMap.begin();
 		for (; iter != addCharacterMap.end(); ++iter)
 		{
-			if (iter->first == ptrCharac->characterID)
+			if (iter->first == myCharacterID)
 			{
 				continue;
 			}
@@ -272,10 +273,11 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrCharac)
 			case dfPACKET_MOVE_DIR_RD:
 			case dfPACKET_MOVE_DIR_DD:
 			case dfPACKET_MOVE_DIR_LD:
-				MakePacketMoveStart(&packetBuf, addSecterCharac->characterID, addSecterCharac->move8Dir, addSecterCharac->xPos, addSecterCharac->yPos);
+				//MakePacketMoveStart(&packetBuf, addSecterCharac->characterID, addSecterCharac->move8Dir, addSecterCharac->xPos, addSecterCharac->yPos);
+				MakePacketMoveStart(&packetBuf, addSecterCharac);
 			}
 
-			SendUnicast(ptrCharac->socket, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+			SendUnicast(ptrMyCharac->socket, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 		}
 	}
 }
@@ -348,6 +350,7 @@ void SendPacketByAcceptEvent(CharacterInfo* ptrCharac, const char* buf, int size
 {
 	SerializationBuffer sendPacket;
 	SectorAround sendTargetSectors;
+	CharacterInfo* ptrOtherCharac;
 	GetSectorAround(ptrCharac->curPos, &sendTargetSectors);
 
 	// 내정보를 주변 섹터에 뿌린다.
@@ -363,7 +366,12 @@ void SendPacketByAcceptEvent(CharacterInfo* ptrCharac, const char* buf, int size
 		std::map<DWORD, CharacterInfo*>::iterator iter = sector.begin();
 		for (; iter != sector.end(); ++iter)
 		{
-			MakePacketCreateOtherCharacter(&sendPacket, iter->second);
+			ptrOtherCharac = iter->second;
+			MakePacketCreateOtherCharacter(&sendPacket, ptrOtherCharac);
+			if (ptrOtherCharac->action != INVALID_ACTION)
+			{
+				MakePacketMoveStart(&sendPacket, ptrOtherCharac);
+			}
 			SendUnicast(ptrCharac->socket, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 			sendPacket.ClearBuffer();
 		}
