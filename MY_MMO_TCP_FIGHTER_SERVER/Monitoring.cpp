@@ -20,12 +20,19 @@ void Monitoring()
 {
 	DWORD endMeasurementTime = timeGetTime();
 	DWORD interval = endMeasurementTime - startMeasurementTime;
+	static int printCnt = 0;
 	if (interval >= 1000)
 	{
-		_Log(dfLOG_LEVEL_SYSTEM, "FPS: %d, Loop: %d, Session Count: %lld, Character Count: %lld, Sector Character Count: %lld", fps, loopCnt, GetSessionCnt(), GetCharacterCnt(), GetSectorCharacterCnt());
+		if (printCnt == 11)
+		{
+			printCnt = 0;
+			_Log(dfLOG_LEVEL_SYSTEM, "FPS: %d, Loop: %d, Session Count: %lld, Character Count: %lld, Sector Character Count: %lld", fps, loopCnt, GetSessionCnt(), GetCharacterCnt(), GetSectorCharacterCnt());
+		}
+		
 		startMeasurementTime = endMeasurementTime - (interval - 1000);
 		fps = 0;
 		loopCnt = 0;
+		printCnt += 1;
 	}
 }
 
