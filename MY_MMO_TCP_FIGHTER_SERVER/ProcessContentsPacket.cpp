@@ -9,9 +9,6 @@
 
 #undef PROFILE
 
-#define INVALID_ACTION	0xff
-#define	INTERVAL_FPS(FRAME_COUNT)	(1000 / FRAME_COUNT)
-
 static DWORD gCharacterID = 1;
 static std::map<SOCKET, CharacterInfo*> characterList;
 static const wchar_t* dirTable[8] = { L"LL", L"LU", L"UU", L"RU", L"RR", L"RD", L"DD", L"LD" };
@@ -49,7 +46,7 @@ void ProcessDisconnectSessionEvent(void* param)
 {
 	SerializationBuffer sendPacket;
 	//_Log(dfLOG_LEVEL_SYSTEM, "Disconnect character ID: %d, X: %d, Y: %d", charac->characterID, charac->)
-	CharacterInfo* disconnectCharac = FindCharacter((SOCKET)param);
+	CharacterInfo* disconnectCharac = characterList[(SOCKET)param];//FindCharacter((SOCKET)param);
 	// 섹터에서 제거
 	Sector_RemoveCharacter(disconnectCharac);
 	characterList.erase((SOCKET)param);
@@ -211,15 +208,26 @@ void MakePacketDeleteCharacter(SerializationBuffer* packetBuf, DWORD id)
 	(*packetBuf) << id;
 }
 
-void MakePacketMoveStart(SerializationBuffer* packetBuf, DWORD id, BYTE dir, WORD xPos, WORD yPos)
+void MakePacketMoveStart(SerializationBuffer* packetBuf, DWORD id, BYTE move8Dir, WORD xPos, WORD yPos)
 {
 	CommonPacketHeader packetHeader;
 	packetHeader.byCode = dfPACKET_CODE;
-	packetHeader.bySize = sizeof(id) + sizeof(dir) + sizeof(xPos) + sizeof(yPos);
+	packetHeader.bySize = sizeof(id) + sizeof(move8Dir) + sizeof(xPos) + sizeof(yPos);
 	packetHeader.byType = dfPACKET_SC_MOVE_START;
 
 	packetBuf->Enqueue((char*)&packetHeader, sizeof(CommonPacketHeader));
-	(*packetBuf) << id << dir << xPos << yPos;
+	(*packetBuf) << id << move8Dir << xPos << yPos;
+}
+
+void MakePacketMoveStart(SerializationBuffer* packetBuf, CharacterInfo* charac)
+{
+	CommonPacketHeader packetHeader;
+	packetHeader.byCode = dfPACKET_CODE;
+	packetHeader.bySize = sizeof(DWORD) + sizeof(BYTE) + sizeof(WORD) + sizeof(WORD);
+	packetHeader.byType = dfPACKET_SC_MOVE_START;
+
+	packetBuf->Enqueue((char*)&packetHeader, sizeof(CommonPacketHeader));
+	(*packetBuf) << charac->characterID << charac->move8Dir << charac->xPos << charac->yPos;
 }
 
 void MakePacketMoveStop(SerializationBuffer* packetBuf, DWORD id, BYTE dir, WORD xPos, WORD yPos)
@@ -528,7 +536,6 @@ static DWORD startTime = StartMonitor();
 void Update()
 {
 	CountLoop();
-	//static DWORD startTime = StartMonitor();
 	DWORD endTime = timeGetTime();
 	DWORD intervalTime = endTime - startTime;
 	if (intervalTime < INTERVAL_FPS(25))
@@ -542,7 +549,8 @@ void Update()
 	std::map<SOCKET, CharacterInfo*>::iterator iter = characterList.begin();
 	for (; iter != characterList.end();)
 	{
-		ptrCharac = (iter++)->second;
+		ptrCharac = iter->second;
+		++iter;
 		if (ptrCharac->hp < 1)
 		{
 			DisconnectSession(ptrCharac->socket);

@@ -41,7 +41,9 @@ void MakePacketCreateOtherCharacter(SerializationBuffer* packetBuf, CharacterInf
 
 void MakePacketDeleteCharacter(SerializationBuffer* packetBuf, DWORD id);
 
-void MakePacketMoveStart(SerializationBuffer* packetBuf, DWORD id, BYTE dir, WORD xPos, WORD yPos);
+void MakePacketMoveStart(SerializationBuffer* packetBuf, DWORD id, BYTE move8Dir, WORD xPos, WORD yPos);
+
+void MakePacketMoveStart(SerializationBuffer* packetBuf, CharacterInfo* charac);
 
 void MakePacketAttack1(SerializationBuffer* packetBuf, DWORD id, BYTE dir, WORD xPos, WORD yPos);
 
