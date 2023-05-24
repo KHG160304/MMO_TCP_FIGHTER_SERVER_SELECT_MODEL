@@ -18,7 +18,6 @@ void InitContents(void)
 	SetProcessContentsAcceptEvent(ProcessAcceptEvent);
 	SetProcessContentsDisconnectSessionEvent(ProcessDisconnectSessionEvent);
 	SetPacketHeaderSize(sizeof(CommonPacketHeader));
-	SetCheckIfCompltedPacketHandler(CheckIfCompletedPacket);
 	SetDispatchPacketToContentsHandler(DispatchPacketToContents);
 }
 
@@ -34,8 +33,6 @@ void ProcessAcceptEvent(void* param)
 	//	, characInfo->characterID, i);
 
 	ConvertPacketCreateMyCharaterToCreateOtherCharacter(&sendPacket);
-	//SendSectorAround(characInfo, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), true);
-	//SendToMeOfSectorAroundCharacterInfo(characInfo);
 	SendPacketByAcceptEvent(characInfo, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 	characterList.insert({ (SOCKET)param, characInfo });
 	// 섹터에 추가
@@ -55,22 +52,6 @@ void ProcessDisconnectSessionEvent(void* param)
 	SendSectorAround(disconnectCharac, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize(), true);
 	
 	delete disconnectCharac;
-}
-
-bool CheckIfCompletedPacket(char* packetHeader, int allRecivedPacketSize, int* outPacketBody)
-{
-	if (((CommonPacketHeader*)packetHeader)->byCode != dfPACKET_CODE)
-	{
-		return false;
-	}
-
-	int packetBodySize = ((CommonPacketHeader*)packetHeader)->bySize;
-	if (packetBodySize + sizeof(CommonPacketHeader) > allRecivedPacketSize)
-	{
-		return false;
-	}
-	*outPacketBody = packetBodySize;
-	return true;
 }
 
 CharacterInfo* CreateCharacterInfo(UINT_PTR sessionKey)

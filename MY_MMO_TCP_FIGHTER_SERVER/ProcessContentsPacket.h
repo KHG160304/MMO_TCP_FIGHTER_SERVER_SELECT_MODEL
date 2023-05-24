@@ -17,8 +17,6 @@ void ProcessAcceptEvent(void* param);
 
 void ProcessDisconnectSessionEvent(void* param);
 
-bool CheckIfCompletedPacket(char* recvQueue, int allRecivedPacketSize, int* outPacketBodySize);
-
 bool DispatchPacketToContents(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* tmpRecvPacketBody);
 
 CharacterInfo* CreateCharacterInfo(UINT_PTR sessionKey);

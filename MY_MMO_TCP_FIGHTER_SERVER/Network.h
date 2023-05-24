@@ -32,7 +32,7 @@ void ProcessAcceptNetworkEvent(void);
 
 bool ProcessRecvNetworkEvent(SOCKET session);
 
-void ProcessSendNetworkEvent(SOCKET session);
+bool ProcessSendNetworkEvent(SOCKET session);
 
 bool SendUnicast(SOCKET socket, const char* buf, int size);
 
@@ -55,7 +55,6 @@ void SetProcessContentsAcceptEvent(void (*ProcessContentsAcceptEvent)(void* para
 void SetProcessContentsDisconnectSessionEvent(void (*ProcessContentsDisconnectSessionEvent)(void* param));
 
 void SetPacketHeaderSize(int size);
-void SetCheckIfCompltedPacketHandler(bool (*paramCheckIfCompletedPacket)(char* bufPacketHeader, int allRecivedPacketSize, int* outPacketBodySize));
 void SetDispatchPacketToContentsHandler(bool (*DispatchPacketToContents)(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* recvPacket));
 
 

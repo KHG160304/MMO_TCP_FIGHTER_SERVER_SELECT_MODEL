@@ -12,6 +12,11 @@
 #define	SERVERPORT		11601
 #define USER_FD_SETSIZE	FD_SETSIZE - 1 
 
+//-----------------------------------------------------------------
+// 메시지 검증값
+//-----------------------------------------------------------------
+#define dfPACKET_CODE		0x89
+
 struct CommonPacketHeader
 {
 	BYTE	byCode;
@@ -148,31 +153,34 @@ void ProcessSelectIOEvent(const SOCKET* socketTable, FD_SET* rset, FD_SET* wset)
 	{
 		if (FD_ISSET(socketTable[0], rset))
 		{
+			selectCnt -= 1;
 			PRO_BEGIN(L"ProcessAcceptNetworkEvent");
 			ProcessAcceptNetworkEvent();
 			PRO_END(L"ProcessAcceptNetworkEvent");
-			selectCnt -= 1;
 		}
 
 		int isNetworkIOPossible = true;
 		for (int i = 1; selectCnt > 0 && i < FD_SETSIZE; ++i)
 		{
-			if (FD_ISSET(socketTable[i], rset))
+			if (FD_ISSET(socketTable[i], wset))
 			{
 				selectCnt -= 1;
-				PRO_BEGIN(L"ProcessRecvNetworkEvent");
-				isNetworkIOPossible = ProcessRecvNetworkEvent(socketTable[i]);
-				PRO_END(L"ProcessRecvNetworkEvent");
+				//if (isNetworkIOPossible)
+				//{
+				PRO_BEGIN(L"ProcessSendNetworkEvent");
+				isNetworkIOPossible = ProcessSendNetworkEvent(socketTable[i]);
+				PRO_END(L"ProcessSendNetworkEvent");
+				//}
 			}
 
-			if (FD_ISSET(socketTable[i], wset))
+			if (FD_ISSET(socketTable[i], rset))
 			{
 				selectCnt -= 1;
 				if (isNetworkIOPossible)
 				{
-					//PRO_BEGIN(L"ProcessSendNetworkEvent");
-					ProcessSendNetworkEvent(socketTable[i]);
-					//PRO_END(L"ProcessSendNetworkEvent");
+					PRO_BEGIN(L"ProcessRecvNetworkEvent");
+					ProcessRecvNetworkEvent(socketTable[i]);
+					PRO_END(L"ProcessRecvNetworkEvent");
 				}
 			}
 		}
@@ -239,7 +247,7 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 
 		ptrRecvQueue->Peek((char*)&tmpRecvPacketHeader, sizeof(CommonPacketHeader));
 		
-		if (tmpRecvPacketHeader.byCode != 0x89)
+		if (tmpRecvPacketHeader.byCode != dfPACKET_CODE)
 		{
 			break;
 		}
@@ -254,11 +262,10 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 		tmpRecvPacketBody.ClearBuffer();
 	}
 
-	//delete[] tmpRecvPacketHeader;
 	return true;
 }
 
-void ProcessSendNetworkEvent(SOCKET socket)
+bool ProcessSendNetworkEvent(SOCKET socket)
 {
 	//Session* ptrSession1 = FindSession(socket);
 	//Session* ptrSession = sessionList[socket];
@@ -272,11 +279,12 @@ void ProcessSendNetworkEvent(SOCKET socket)
 		{
 			_Log(dfLOG_LEVEL_ERROR, "[소켓ID: %lld] SEND ERROR 발생(CODE: %d)", socket, WSAGetLastError());
 			DisconnectSession(socket);
-			return;
+			return false;
 		}
 		ptrSendQueue->MoveFront(sendSize);
 		//_Log(dfLOG_LEVEL_ERROR, "[소켓ID: %lld] SEND BYTE(%d)", socket, ptrSendQueue->MoveFront(sendSize));
 	}
+	return true;
 }
 
 size_t GetSessionCnt()
@@ -372,11 +380,6 @@ void SetPacketHeaderSize(int size)
 {
 	packetHeaderSize = size;
 	bufPacketHeader = new char[size];
-}
-
-void SetCheckIfCompltedPacketHandler(bool (*paramCheckIfCompletedPacket)(char* bufPacketHeader, int allRecivedPacketSize, int* outPacketBodySize))
-{
-	CheckIfCompletedPacketHandler = paramCheckIfCompletedPacket;
 }
 
 void SetProcessContentsAcceptEvent(void (*pProcessContentsAcceptEvent)(void* param))
