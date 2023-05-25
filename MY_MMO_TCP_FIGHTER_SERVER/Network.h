@@ -36,6 +36,8 @@ bool ProcessSendNetworkEvent(SOCKET session);
 
 bool SendUnicast(SOCKET socket, const char* buf, int size);
 
+bool SendUnicast(Session* ptrSession, const char* buf, int size);
+
 void SendBroadcast(const char* buf, int size, SOCKET excludeSessionId = INVALID_SOCKET);
 
 void SendMulticast(SOCKET socket[], int socketCnt, const char* buf, int size);

@@ -342,7 +342,9 @@ bool DisconnectSession(Session* disconnectSession)
 
 bool SendUnicast(SOCKET socket, const char* buf, int size)
 {
-	return sessionList[socket]->sendQueue.Enqueue(buf, size) > 0;
+bool SendUnicast(Session* ptrSession, const char* buf, int size)
+{
+	return ptrSession->sendQueue.Enqueue(buf, size) > 0;
 }
 
 void SendBroadcast(const char* buf, int size, SOCKET excludeSessionId)
