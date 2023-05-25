@@ -21,20 +21,20 @@ void InitContents(void)
 	SetDispatchPacketToContentsHandler(DispatchPacketToContents);
 }
 
-void ProcessAcceptEvent(void* param)
+void ProcessAcceptEvent(void* ptrSession)
 {
-	CharacterInfo* characInfo = CreateCharacterInfo((SOCKET)param);
+	CharacterInfo* characInfo = CreateCharacterInfo((Session*)ptrSession);
 
 	SerializationBuffer sendPacket;
 	//MakePacketCreateMyCharacter(&sendPacket, characInfo->characterID, dfPACKET_MOVE_DIR_LL, characInfo->xPos, characInfo->yPos, defCHARACTER_DEFAULT_HP);
 	MakePacketCreateMyCharacter(&sendPacket, characInfo);
-	SendUnicast((SOCKET)param, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
+	SendUnicast((Session*)ptrSession, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 	//_Log(dfLOG_LEVEL_DEBUG, "CREATE CHARACTER_ID[%d] PACKET SEND [%d]"
 	//	, characInfo->characterID, i);
 
 	ConvertPacketCreateMyCharaterToCreateOtherCharacter(&sendPacket);
 	SendPacketByAcceptEvent(characInfo, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
-	characterList.insert({ (SOCKET)param, characInfo });
+	characterList.insert({ ((Session*)ptrSession)->socket, characInfo });
 	// 섹터에 추가
 	Sector_AddCharacter(characInfo);
 }
@@ -54,10 +54,11 @@ void ProcessDisconnectSessionEvent(void* param)
 	delete disconnectCharac;
 }
 
-CharacterInfo* CreateCharacterInfo(UINT_PTR sessionKey)
+CharacterInfo* CreateCharacterInfo(Session* ptrSession)
 {
 	CharacterInfo* characInfo = new CharacterInfo();
-	characInfo->socket = (SOCKET)sessionKey;
+	characInfo->socket = (SOCKET)ptrSession->socket;
+	characInfo->ptrSession = ptrSession;
 	characInfo->characterID = gCharacterID;
 	characInfo->hp = defCHARACTER_DEFAULT_HP;
 	characInfo->action = INVALID_ACTION;

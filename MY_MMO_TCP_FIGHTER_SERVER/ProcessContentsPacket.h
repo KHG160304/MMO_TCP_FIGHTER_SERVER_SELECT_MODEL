@@ -19,7 +19,7 @@ void ProcessDisconnectSessionEvent(void* param);
 
 bool DispatchPacketToContents(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* tmpRecvPacketBody);
 
-CharacterInfo* CreateCharacterInfo(UINT_PTR sessionKey);
+CharacterInfo* CreateCharacterInfo(Session* sessionKey);
 
 size_t GetCharacterCnt(void);
 

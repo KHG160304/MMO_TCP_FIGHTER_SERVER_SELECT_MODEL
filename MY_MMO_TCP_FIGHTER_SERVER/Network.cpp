@@ -31,8 +31,8 @@ static std::map<SOCKET, Session*> sessionList;
 static int packetHeaderSize = -1;
 static char* bufPacketHeader;
 
-static void (*ProcessContentsAcceptEvent)(void* param) = nullptr;
 static void (*ProcessContentsDisconnectSessionEvent)(void* param) = nullptr;
+static void (*ProcessContentsAcceptEvent)(void* ptrSession) = nullptr;
 static bool (*CheckIfCompletedPacketHandler)(char* bufPacketHeader, int allRecivedPacketSize, int* outPacketBodySize) = nullptr;
 static bool (*DispatchPacketToContentsHandler)(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* recvPacket) = nullptr;
 
@@ -205,12 +205,12 @@ void ProcessAcceptNetworkEvent(void)
 	}
 
 	//WCHAR wstrClientIp[16];
-	Session* newSession = CreateSession(clientSock, &clientAddr);
+	//Session* newSession = CreateSession(clientSock, &clientAddr);
 	//_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] 클라이언트 접속"
 	//	, InetNtop(AF_INET, &clientAddr.sin_addr, wstrClientIp, 16)
 	//	, ntohs(clientAddr.sin_port));
 
-	ProcessContentsAcceptEvent((void*)clientSock);
+	ProcessContentsAcceptEvent((void*)CreateSession(clientSock, &clientAddr));
 }
 
 bool ProcessRecvNetworkEvent(SOCKET socket)
