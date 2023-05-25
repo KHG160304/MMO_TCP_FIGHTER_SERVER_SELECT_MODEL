@@ -23,7 +23,7 @@ CharacterInfo* CreateCharacterInfo(Session* sessionKey);
 
 size_t GetCharacterCnt(void);
 
-CharacterInfo* FindCharacter(SOCKET socket);
+//CharacterInfo* FindCharacter(SOCKET socket);
 
 void MakePacketEcho(SerializationBuffer* packetBuf, DWORD time);
 

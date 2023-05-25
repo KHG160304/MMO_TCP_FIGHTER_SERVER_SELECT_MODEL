@@ -36,6 +36,21 @@ static void (*ProcessContentsAcceptEvent)(void* ptrSession) = nullptr;
 static bool (*CheckIfCompletedPacketHandler)(char* bufPacketHeader, int allRecivedPacketSize, int* outPacketBodySize) = nullptr;
 static bool (*DispatchPacketToContentsHandler)(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* recvPacket) = nullptr;
 
+size_t GetSessionCnt()
+{
+	return sessionList.size();
+}
+
+inline Session* FindSession(SOCKET socket)
+{
+	return sessionList[socket];
+}
+
+inline size_t EraseSessionFromContainer(SOCKET socket)
+{
+	return sessionList.erase(socket);
+}
+
 bool InitNetwork(void)
 {
 	timeBeginPeriod(1);
@@ -215,8 +230,7 @@ void ProcessAcceptNetworkEvent(void)
 
 bool ProcessRecvNetworkEvent(SOCKET socket)
 {
-	//Session* ptrSession = FindSession(socket);
-	Session* ptrSession = sessionList[socket];
+	Session* ptrSession = FindSession(socket);
 	RingBuffer* ptrRecvQueue = &ptrSession->recvQueue;
 	int receivedSize = recv(socket, ptrRecvQueue->GetRearBufferPtr(), ptrRecvQueue->GetDirectEnqueueSize(), 0);
 	if (receivedSize == SOCKET_ERROR)
@@ -267,9 +281,7 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 
 bool ProcessSendNetworkEvent(SOCKET socket)
 {
-	//Session* ptrSession1 = FindSession(socket);
-	//Session* ptrSession = sessionList[socket];
-	RingBuffer* ptrSendQueue = &sessionList[socket]->sendQueue;
+	RingBuffer* ptrSendQueue = &FindSession(socket)->sendQueue;
 	int sendSize;
 
 	while (ptrSendQueue->GetUseSize() > 0)
@@ -285,16 +297,6 @@ bool ProcessSendNetworkEvent(SOCKET socket)
 		//_Log(dfLOG_LEVEL_ERROR, "[소켓ID: %lld] SEND BYTE(%d)", socket, ptrSendQueue->MoveFront(sendSize));
 	}
 	return true;
-}
-
-size_t GetSessionCnt()
-{
-	return sessionList.size();
-}
-
-Session* FindSession(SOCKET socket)
-{
-	return sessionList[socket];
 }
 
 Session* CreateSession(SOCKET socket, const SOCKADDR_IN* clientAddr)
@@ -334,14 +336,17 @@ bool DisconnectSession(Session* disconnectSession)
 	//	, InetNtop(AF_INET, &disconnectSession->addrIn.sin_addr, wstrClientIp, 16), ntohs(disconnectSession->addrIn.sin_port), disconnectSession->socket);
 	//disconnectSession->sendQueue.ClearBuffer();
 	closesocket(disconnectSession->socket);
-	sessionList.erase(disconnectSession->socket);
 	ProcessContentsDisconnectSessionEvent((void*)disconnectSession->socket);
+	EraseSessionFromContainer(disconnectSession->socket);
 
 	return true;
 }
 
 bool SendUnicast(SOCKET socket, const char* buf, int size)
 {
+	return FindSession(socket)->sendQueue.Enqueue(buf, size) > 0;
+}
+
 bool SendUnicast(Session* ptrSession, const char* buf, int size)
 {
 	return ptrSession->sendQueue.Enqueue(buf, size) > 0;

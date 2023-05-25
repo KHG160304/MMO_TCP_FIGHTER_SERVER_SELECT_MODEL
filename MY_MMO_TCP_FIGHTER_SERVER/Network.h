@@ -44,7 +44,7 @@ void SendMulticast(SOCKET socket[], int socketCnt, const char* buf, int size);
 
 size_t GetSessionCnt();
 
-Session* FindSession(SOCKET socket);
+//Session* FindSession(SOCKET socket);
 
 Session* CreateSession(SOCKET socket, const SOCKADDR_IN* clientAddr);
 

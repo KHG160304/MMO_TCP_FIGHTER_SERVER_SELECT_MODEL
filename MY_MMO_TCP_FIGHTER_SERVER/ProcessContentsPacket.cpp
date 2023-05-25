@@ -13,6 +13,21 @@ static DWORD gCharacterID = 1;
 static std::map<SOCKET, CharacterInfo*> characterList;
 static const wchar_t* dirTable[8] = { L"LL", L"LU", L"UU", L"RU", L"RR", L"RD", L"DD", L"LD" };
 
+size_t GetCharacterCnt(void)
+{
+	return characterList.size();
+}
+
+inline CharacterInfo* FindCharacter(SOCKET socket)
+{
+	return characterList[socket];
+}
+
+inline size_t EraseCharacter(SOCKET socket)
+{
+	return characterList.erase(socket);
+}
+
 void InitContents(void)
 {
 	SetProcessContentsAcceptEvent(ProcessAcceptEvent);
@@ -76,16 +91,6 @@ CharacterInfo* CreateCharacterInfo(Session* ptrSession)
 
 	gCharacterID = (gCharacterID + 1) % INVALID_CHARACTER_ID;
 	return characInfo;
-}
-
-size_t GetCharacterCnt(void)
-{
-	return characterList.size();
-}
-
-CharacterInfo* FindCharacter(SOCKET socket)
-{
-	return characterList[socket];
 }
 
 bool DispatchPacketToContents(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* tmpRecvPacketBody)
