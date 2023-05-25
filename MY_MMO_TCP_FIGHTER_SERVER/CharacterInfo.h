@@ -11,8 +11,10 @@
 	DWORD dwPos;
 };*/
 
+struct Session;
 struct CharacterInfo
 {
+	Session* ptrSession;
 	SOCKET	socket;
 	DWORD	characterID;
 	DWORD	dwActionTick;
