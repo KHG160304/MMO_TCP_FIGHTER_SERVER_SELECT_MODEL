@@ -31,8 +31,8 @@ static std::map<SOCKET, Session*> sessionList;
 static int packetHeaderSize = -1;
 static char* bufPacketHeader;
 
-static void (*ProcessContentsDisconnectSessionEvent)(void* param) = nullptr;
 static void (*ProcessContentsAcceptEvent)(void* ptrSession) = nullptr;
+static void (*ProcessContentsDisconnectSessionEvent)(void* param, void* userParam) = nullptr;
 static bool (*CheckIfCompletedPacketHandler)(char* bufPacketHeader, int allRecivedPacketSize, int* outPacketBodySize) = nullptr;
 static bool (*DispatchPacketToContentsHandler)(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* recvPacket) = nullptr;
 
@@ -236,13 +236,13 @@ bool ProcessRecvNetworkEvent(SOCKET socket)
 	if (receivedSize == SOCKET_ERROR)
 	{
 		//_Log(dfLOG_LEVEL_DEBUG, "[소켓ID: %lld] RECV ERROR 발생(CODE: %d)", socket, WSAGetLastError());
-		DisconnectSession(socket);
+		DisconnectSession(socket, nullptr);
 		return false;
 	}
 	else if (receivedSize == 0)
 	{
 		//_Log(dfLOG_LEVEL_DEBUG, "[소켓ID: %lld] RECV 클라이언트 FIN 수신확인", socket);
-		DisconnectSession(socket);
+		DisconnectSession(socket, nullptr);
 		return false;
 	}
 	ptrSession->lastRecvTime = timeGetTime();
@@ -290,7 +290,7 @@ bool ProcessSendNetworkEvent(SOCKET socket)
 		if (sendSize == SOCKET_ERROR)
 		{
 			_Log(dfLOG_LEVEL_ERROR, "[소켓ID: %lld] SEND ERROR 발생(CODE: %d)", socket, WSAGetLastError());
-			DisconnectSession(socket);
+			DisconnectSession(socket, nullptr);
 			return false;
 		}
 		ptrSendQueue->MoveFront(sendSize);
@@ -306,26 +306,20 @@ Session* CreateSession(SOCKET socket, const SOCKADDR_IN* clientAddr)
 	return newSession;
 }
 
-bool DisconnectSession(SOCKET socket)
+bool DisconnectSession(SOCKET socket, void* userParam)
 {
 	//WCHAR	wstrClientIp[16];
-	Session* disconnectSession = sessionList[socket];
-	if (disconnectSession != nullptr)
-	{
-		//_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] 클라이언트 접속 종료, 소켓ID=%lld"
-		//	, InetNtop(AF_INET, &disconnectSession->addrIn.sin_addr, wstrClientIp, 16), ntohs(disconnectSession->addrIn.sin_port), socket);
-		//disconnectSession->sendQueue.ClearBuffer();
-		ProcessContentsDisconnectSessionEvent((void*)socket);
-		delete disconnectSession;
-	}
-
+	//_Log(dfLOG_LEVEL_DEBUG, "[%s/%d] 클라이언트 접속 종료, 소켓ID=%lld"
+	//	, InetNtop(AF_INET, &disconnectSession->addrIn.sin_addr, wstrClientIp, 16), ntohs(disconnectSession->addrIn.sin_port), socket);
+	//disconnectSession->sendQueue.ClearBuffer();
 	closesocket(socket);
-	sessionList.erase(socket);
-	
+	ProcessContentsDisconnectSessionEvent((void*)socket, userParam);
+	delete FindSession(socket);
+	EraseSessionFromContainer(socket);
 	return true;
 }
 
-bool DisconnectSession(Session* disconnectSession)
+bool DisconnectSession(Session* disconnectSession, void* userParam)
 {
 	//WCHAR	wstrClientIp[16];
 	if (disconnectSession == nullptr)
@@ -336,8 +330,9 @@ bool DisconnectSession(Session* disconnectSession)
 	//	, InetNtop(AF_INET, &disconnectSession->addrIn.sin_addr, wstrClientIp, 16), ntohs(disconnectSession->addrIn.sin_port), disconnectSession->socket);
 	//disconnectSession->sendQueue.ClearBuffer();
 	closesocket(disconnectSession->socket);
-	ProcessContentsDisconnectSessionEvent((void*)disconnectSession->socket);
 	EraseSessionFromContainer(disconnectSession->socket);
+	ProcessContentsDisconnectSessionEvent((void*)disconnectSession->socket, userParam);
+	delete disconnectSession;
 
 	return true;
 }
@@ -394,7 +389,7 @@ void SetProcessContentsAcceptEvent(void (*pProcessContentsAcceptEvent)(void* par
 	ProcessContentsAcceptEvent = pProcessContentsAcceptEvent;
 }
 
-void SetProcessContentsDisconnectSessionEvent(void (*pProcessContentsDisconnectSessionEvent)(void* param))
+void SetProcessContentsDisconnectSessionEvent(void (*pProcessContentsDisconnectSessionEvent)(void* param, void* userParam))
 {
 	ProcessContentsDisconnectSessionEvent = pProcessContentsDisconnectSessionEvent;
 }

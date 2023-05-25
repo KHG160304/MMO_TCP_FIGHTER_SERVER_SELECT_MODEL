@@ -48,13 +48,15 @@ size_t GetSessionCnt();
 
 Session* CreateSession(SOCKET socket, const SOCKADDR_IN* clientAddr);
 
-bool DisconnectSession(SOCKET socket);
+bool DisconnectSession(SOCKET socket, void* userParam);
+
+bool DisconnectSession(Session* disconnectSession, void* userParam);
 
 void ShutdownServer(void);
 
 
 void SetProcessContentsAcceptEvent(void (*ProcessContentsAcceptEvent)(void* param));
-void SetProcessContentsDisconnectSessionEvent(void (*ProcessContentsDisconnectSessionEvent)(void* param));
+void SetProcessContentsDisconnectSessionEvent(void (*ProcessContentsDisconnectSessionEvent)(void* param, void* userParam));
 
 void SetPacketHeaderSize(int size);
 void SetDispatchPacketToContentsHandler(bool (*DispatchPacketToContents)(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* recvPacket));

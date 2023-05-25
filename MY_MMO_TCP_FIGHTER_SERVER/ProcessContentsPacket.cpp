@@ -54,11 +54,19 @@ void ProcessAcceptEvent(void* ptrSession)
 	Sector_AddCharacter(characInfo);
 }
 
-void ProcessDisconnectSessionEvent(void* param)
+void ProcessDisconnectSessionEvent(void* param, void* userParam)
 {
 	SerializationBuffer sendPacket;
 	//_Log(dfLOG_LEVEL_SYSTEM, "Disconnect character ID: %d, X: %d, Y: %d", charac->characterID, charac->)
-	CharacterInfo* disconnectCharac = characterList[(SOCKET)param];//FindCharacter((SOCKET)param);
+	CharacterInfo* disconnectCharac;// = characterList[(SOCKET)param];//FindCharacter((SOCKET)param);
+	if (userParam != nullptr)
+	{
+		disconnectCharac = (CharacterInfo*)userParam;
+	}
+	else
+	{
+		disconnectCharac = FindCharacter((SOCKET)param);
+	}
 	// 섹터에서 제거
 	Sector_RemoveCharacter(disconnectCharac);
 	characterList.erase((SOCKET)param);
@@ -540,11 +548,11 @@ void Update()
 		++iter;
 		if (ptrCharac->hp < 1)
 		{
-			DisconnectSession(ptrCharac->socket);
+			DisconnectSession(ptrCharac->socket, ptrCharac);
 		}
-		else if (endTime - FindSession(ptrCharac->socket)->lastRecvTime > dfNETWORK_PACKET_RECV_TIMEOUT)
+		else if (endTime - ptrCharac->ptrSession->lastRecvTime > dfNETWORK_PACKET_RECV_TIMEOUT)
 		{
-			DisconnectSession(ptrCharac->socket);
+			DisconnectSession(ptrCharac->socket, ptrCharac);
 		}
 		else if (ptrCharac->action != INVALID_ACTION)
 		{

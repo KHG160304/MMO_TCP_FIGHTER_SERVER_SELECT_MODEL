@@ -15,7 +15,7 @@ void InitContents(void);
 
 void ProcessAcceptEvent(void* param);
 
-void ProcessDisconnectSessionEvent(void* param);
+void ProcessDisconnectSessionEvent(void* param, void* userParam);
 
 bool DispatchPacketToContents(UINT_PTR sessionKey, char* tmpRecvPacketHeader, SerializationBuffer* tmpRecvPacketBody);
 
