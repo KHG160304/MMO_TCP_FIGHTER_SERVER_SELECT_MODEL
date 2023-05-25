@@ -34,7 +34,7 @@ bool Sector_UpdateCharacter(CharacterInfo* charac)
 
 	if (curPos.yPos >= SECTOR_HEIGHT || curPos.xPos >= SECTOR_WIDTH)
 	{
-		DisconnectSession(charac->socket);
+		DisconnectSession(charac->ptrSession, charac);
 		return false;
 	}
 
@@ -220,7 +220,7 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrMyCharac)
 			}
 			packetBuf.ClearBuffer();
 			MakePacketDeleteCharacter(&packetBuf, iter->first);
-			SendUnicast(ptrMyCharac->socket, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+			SendUnicast(ptrMyCharac->ptrSession, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 		}
 	}
 
@@ -277,7 +277,7 @@ void CharacterSectorUpdatePacket(CharacterInfo* ptrMyCharac)
 				MakePacketMoveStart(&packetBuf, addSecterCharac);
 			}
 
-			SendUnicast(ptrMyCharac->socket, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
+			SendUnicast(ptrMyCharac->ptrSession, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 		}
 	}
 }
@@ -291,7 +291,7 @@ void SendUnicastSector(SectorPos target, const char* buf, int size, DWORD exclud
 		{
 			if (excludeCharacterID != iter->first)
 			{
-				SendUnicast(iter->second->socket, buf, size);
+				SendUnicast(iter->second->ptrSession, buf, size);
 			}
 		}
 		return;
@@ -300,7 +300,7 @@ void SendUnicastSector(SectorPos target, const char* buf, int size, DWORD exclud
 	std::map<DWORD, CharacterInfo*>::iterator iter = sectorList[target.yPos][target.xPos].begin();
 	for (; iter != sectorList[target.yPos][target.xPos].end(); ++iter)
 	{
-		SendUnicast(iter->second->socket, buf, size);
+		SendUnicast(iter->second->ptrSession, buf, size);
 	}
 }
 
@@ -340,7 +340,7 @@ void SendToMeOfSectorAroundCharacterInfo(CharacterInfo* ptrCharac)
 		for (; iter != sector.end(); ++iter)
 		{
 			MakePacketCreateOtherCharacter(&sendPacket, iter->second);
-			SendUnicast(ptrCharac->socket, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
+			SendUnicast(ptrCharac->ptrSession, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 			sendPacket.ClearBuffer();
 		}
 	}
@@ -372,7 +372,7 @@ void SendPacketByAcceptEvent(CharacterInfo* ptrCharac, const char* buf, int size
 			{
 				MakePacketMoveStart(&sendPacket, ptrOtherCharac);
 			}
-			SendUnicast(ptrCharac->socket, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
+			SendUnicast(ptrCharac->ptrSession, sendPacket.GetFrontBufferPtr(), sendPacket.GetUseSize());
 			sendPacket.ClearBuffer();
 		}
 	}
