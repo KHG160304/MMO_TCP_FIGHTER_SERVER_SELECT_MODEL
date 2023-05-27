@@ -334,9 +334,9 @@ bool ProcessPacketMoveStart(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPac
 	MakePacketMoveStart(&packetBuf, ptrCharacter->characterID, move8Dir, clientXpos, clientYpos);
 	SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 
-	ptrCharacter->dwActionTick = timeGetTime();
-	ptrCharacter->actionXpos = clientXpos;
-	ptrCharacter->actionYpos = clientYpos;
+	//ptrCharacter->dwActionTick = timeGetTime();
+	//ptrCharacter->actionXpos = clientXpos;
+	//ptrCharacter->actionYpos = clientYpos;
 	return true;
 }
 
@@ -379,9 +379,9 @@ bool ProcessPacketMoveStop(UINT_PTR sessionKey, SerializationBuffer* tmpRecvPack
 	MakePacketMoveStop(&packetBuf, ptrCharacter->characterID, stop2Dir, clientXpos, clientYpos);
 	SendSectorAround(ptrCharacter, packetBuf.GetFrontBufferPtr(), packetBuf.GetUseSize());
 
-	ptrCharacter->dwActionTick = timeGetTime();
-	ptrCharacter->actionXpos = clientXpos;
-	ptrCharacter->actionYpos = clientYpos;
+	//ptrCharacter->dwActionTick = timeGetTime();
+	//ptrCharacter->actionXpos = clientXpos;
+	//ptrCharacter->actionYpos = clientYpos;
 
 	return true;
 }
